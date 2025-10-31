@@ -163,4 +163,5 @@ uploads/
 
 # Ignore all .pt files except best.pt
 *.pt
+!ml_server/
 !ml_server/best.pt
