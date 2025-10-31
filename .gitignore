@@ -87,22 +87,18 @@ web_modules/
 .next
 out
 
-# Nuxt.js build / generate output
+# Nuxt.js build output
 .nuxt
 dist
 
 # Gatsby files
 .cache/
-# Comment in the public line in if your project uses Gatsby and not Next.js
-# https://nextjs.org/blog/next-9-1#public-directory-support
-# public
 
 # vuepress build output
 .vuepress/dist
 
 # vuepress v2.x temp and cache directory
 .temp
-.cache
 
 # vitepress build output
 **/.vitepress/dist
@@ -135,9 +131,37 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# ========== ADD THESE LINES BELOW ==========
 
-node_modules/
-.env
-dist/
-*.log
-.DS_Store
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# YOLO/ML specific
+runs/
+weights/
+*.pt
+*.pth
+*.onnx
+*.engine
+
+# Uploads folder
+uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore all .pt files except best.pt
+*.pt
+!ml_server/
+!ml_server/best.pt
