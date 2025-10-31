@@ -2,7 +2,6 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
 import numpy as np, cv2, base64, os, traceback
-import torch
 
 app = FastAPI()
 
@@ -13,19 +12,13 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Add safe globals for PyTorch
-torch.serialization.add_safe_globals([
-    'ultralytics.nn.tasks.DetectionModel',
-    'ultralytics.nn.modules.block.C2f',
-    'ultralytics.nn.modules.conv.Conv',
-    'ultralytics.nn.modules.head.Detect'
-])
-
 # Use relative path for model
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "best.pt")
 print("MODEL_PATH:", MODEL_PATH, "exists:", os.path.exists(MODEL_PATH))
 
-# Load with weights_only=False
+# Set environment variable to allow unsafe loading (temporary fix)
+os.environ['TORCH_WEIGHTS_ONLY'] = '0'
+
 model = YOLO(MODEL_PATH)
 
 @app.get("/")
