@@ -30,8 +30,8 @@ async function postToDetectFromBlob(blob) {
   console.log('📤 Posting to /api/detect, blob size:', blob.size);
   const fd = new FormData();
   fd.append('image', blob, 'frame.jpg');
-  const API_BASE = 'https://object-detection-ml-y5v2.onrender.com/';
-  const res = await fetch(`${API_BASE}/api/detect`, { method: 'POST', body: fd });
+  
+  const res = await fetch('/api/detect', { method: 'POST', body: fd });
 
   const text = await res.text();
   console.log('📥 Response status:', res.status);
