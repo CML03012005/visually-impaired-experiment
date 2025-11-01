@@ -11,6 +11,8 @@ const startCamBtn = document.getElementById('startCameraBtn');
 const captureBtn = document.getElementById('captureBtn');
 const resultImg = document.getElementById('result') || document.getElementById('annotatedImage');
 const resultList = document.getElementById('resultList') || document.getElementById('resultsSection');
+const previewLabel = document.getElementById('previewLabel');
+const resultLabel = document.getElementById('resultLabel');
 
 console.log('📋 Elements found:', {
   fileInput: !!fileInput,
@@ -20,7 +22,9 @@ console.log('📋 Elements found:', {
   startCamBtn: !!startCamBtn,
   captureBtn: !!captureBtn,
   resultImg: !!resultImg,
-  resultList: !!resultList
+  resultList: !!resultList,
+  previewLabel: !!previewLabel,
+  resultLabel: !!resultLabel
 });
 
 const hiddenCanvas = document.createElement('canvas');
@@ -28,30 +32,41 @@ const hiddenCanvas = document.createElement('canvas');
 // ---------- helpers ----------
 async function postToDetectFromBlob(blob) {
   console.log('📤 Posting to /api/detect, blob size:', blob.size);
+  
+  // Show loading spinner
+  const spinner = document.getElementById('loadingSpinner');
+  if (spinner) spinner.style.display = 'flex';
+  
+  // Hide previous result
+  if (resultImg) resultImg.style.display = 'none';
+  
   const fd = new FormData();
   fd.append('image', blob, 'frame.jpg');
-  const res = await fetch('/api/detect', { method: 'POST', body: fd });
-
-  const text = await res.text();
-  console.log('📥 Response status:', res.status);
   
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${text}`);
+  try {
+    const res = await fetch('/api/detect', { method: 'POST', body: fd });
+    const text = await res.text();
+    console.log('📥 Response status:', res.status);
+    
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${text}`);
 
-  let data;
-  try { data = JSON.parse(text); } catch { throw new Error(text); }
+    let data;
+    try { data = JSON.parse(text); } catch { throw new Error(text); }
 
-  if (data.error) throw new Error(data.error);
-  console.log('✅ Detection results:', data.detections?.length || 0, 'objects found');
-  renderResults(data);
-  return data;
+    if (data.error) throw new Error(data.error);
+    console.log('✅ Detection results:', data.detections?.length || 0, 'objects found');
+    renderResults(data);
+    return data;
+  } finally {
+    // Hide loading spinner
+    if (spinner) spinner.style.display = 'none';
+  }
 }
 
 function renderResults(data) {
   console.log('🎨 Rendering results...');
   
-  // Hide the preview image (original upload)
-  if (imageEl) imageEl.style.display = 'none';
-  
+  // Keep the preview image visible (don't hide it)
   // Show annotated result image
   if (resultImg && data.image) {
     resultImg.src = `data:image/jpeg;base64,${data.image}`;
