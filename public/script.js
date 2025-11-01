@@ -240,6 +240,21 @@ if (videoEl && !startCamBtn) {
   startCamera();
 }
 
+if (startCamBtn) {
+  console.log('🎥 Camera button listener attached');
+  startCamBtn.addEventListener('click', () => {
+    console.log('🖱️ Camera button clicked!');
+    startCamera();
+  });
+} else {
+  console.warn('⚠️ startCameraBtn not found');
+}
+
+if (videoEl && !startCamBtn) {
+  console.log('🎥 Auto-starting camera (no button found)');
+  startCamera();
+}
+
 // ---------- Capture from camera ----------
 if (captureBtn && videoEl) {
   console.log('📸 Capture button listener attached');
@@ -309,6 +324,45 @@ if (analyzeBtn) {
       alert('No image to analyze. Upload a photo or start the camera.');
     } catch (e) {
       console.error('❌ Analysis failed:', e);
+      alert('Failed to analyze image.\n' + (e.message || e));
+    }
+  });
+}
+
+// ---------- Explicit Analyze button ----------
+if (analyzeBtn) {
+  console.log('🔍 Analyze button listener attached');
+  analyzeBtn.addEventListener('click', async () => {
+    console.log('🖱️ Analyze button clicked!');
+    try {
+      // 1) prefer file input
+      if (fileInput?.files?.[0]) {
+        console.log('📂 Using file input');
+        await postToDetectFromBlob(fileInput.files[0]);
+        return;
+      }
+      // 2) else use preview image (dataURL) if available
+      if (imageEl?.src?.startsWith('data:')) {
+        console.log('🖼️ Using preview image data URL');
+        const blob = await dataURLtoBlob(imageEl.src);
+        await postToDetectFromBlob(blob);
+        return;
+      }
+      // 3) else capture current video frame
+      if (videoEl?.videoWidth) {
+        console.log('📹 Capturing current video frame');
+        hiddenCanvas.width = videoEl.videoWidth;
+        hiddenCanvas.height = videoEl.videoHeight;
+        hiddenCanvas.getContext('2d').drawImage(videoEl, 0, 0);
+        const blob = await new Promise(r => hiddenCanvas.toBlob(r, 'image/jpeg', 0.92));
+        await postToDetectFromBlob(blob);
+        return;
+      }
+      console.warn('⚠️ No image source available');
+      alert('No image to analyze. Upload a photo or start the camera.');
+    } catch (e) {
+      console.error('❌ Analysis failed:', e);
+      if (loadingOverlay) loadingOverlay.style.display = 'none';
       alert('Failed to analyze image.\n' + (e.message || e));
     }
   });
