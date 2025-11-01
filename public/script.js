@@ -36,10 +36,12 @@ console.log('📋 Elements found:', {
 const hiddenCanvas = document.createElement('canvas');
 let activeStream = null;
 
+// Convert dataURL to Blob
 async function dataURLtoBlob(dataURL) {
   const r = await fetch(dataURL);
   return await r.blob();
 }
+
 async function postToDetectFromBlob(blob) {
   console.log('📤 Posting to /api/detect, blob size:', blob.size);
   
@@ -104,11 +106,6 @@ function renderResults(data) {
     resultList.parentElement.style.display = 'block';
     console.log('✅ Results list updated');
   }
-}
-
-async function dataURLtoBlob(dataURL) {
-  const r = await fetch(dataURL);
-  return await r.blob();
 }
 
 // ---------- Upload flow ----------
