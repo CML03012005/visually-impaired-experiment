@@ -265,14 +265,14 @@
     // Fullscreen image viewer
     const modal = document.getElementById('imageModal');
     const modalImg = document.getElementById('modalImg');
-    const resultImg = document.getElementById('result');
+    const resultImgs = document.getElementById('result');
     const imagePreview = document.getElementById('imagePreview');
     
     // Make both preview and result clickable for fullscreen
-    if (resultImg) {
-      resultImg.addEventListener('click', () => {
-        if (resultImg.src && resultImg.style.display !== 'none') {
-          modalImg.src = resultImg.src;
+    if (resultImgs) {
+      resultImgs.addEventListener('click', () => {
+        if (resultImgs.src && resultImgs.style.display !== 'none') {
+          modalImg.src = resultImgs.src;
           modal.style.display = 'flex';
         }
       });
