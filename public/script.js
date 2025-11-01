@@ -30,7 +30,6 @@ async function postToDetectFromBlob(blob) {
   console.log('📤 Posting to /api/detect, blob size:', blob.size);
   const fd = new FormData();
   fd.append('image', blob, 'frame.jpg');
-
   const res = await fetch('/api/detect', { method: 'POST', body: fd });
 
   const text = await res.text();
@@ -49,11 +48,18 @@ async function postToDetectFromBlob(blob) {
 
 function renderResults(data) {
   console.log('🎨 Rendering results...');
+  
+  // Hide the preview image (original upload)
+  if (imageEl) imageEl.style.display = 'none';
+  
+  // Show annotated result image
   if (resultImg && data.image) {
     resultImg.src = `data:image/jpeg;base64,${data.image}`;
     resultImg.style.display = 'block';
     console.log('✅ Annotated image displayed');
   }
+  
+  // Update results list
   if (resultList) {
     const dets = data.detections || [];
     resultList.innerHTML = dets.length
@@ -106,6 +112,17 @@ if (fileInput) {
     const f = fileInput.files?.[0];
     if (!f) return;
     console.log('📂 File selected:', f.name, f.size, 'bytes');
+    
+    // Clear previous results
+    if (resultImg) {
+      resultImg.style.display = 'none';
+      resultImg.src = '';
+    }
+    if (resultList) {
+      resultList.innerHTML = '';
+      if (resultList.parentElement) resultList.parentElement.style.display = 'none';
+    }
+    
     // show preview
     if (imageEl) {
       imageEl.src = URL.createObjectURL(f);
@@ -132,6 +149,16 @@ async function startCamera() {
   console.log('📷 Starting camera...');
   // Stop any existing stream first
   stopCamera();
+  
+  // Clear previous results
+  if (resultImg) {
+    resultImg.style.display = 'none';
+    resultImg.src = '';
+  }
+  if (resultList) {
+    resultList.innerHTML = '';
+    if (resultList.parentElement) resultList.parentElement.style.display = 'none';
+  }
   
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
