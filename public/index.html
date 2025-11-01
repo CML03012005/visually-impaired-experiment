@@ -262,6 +262,66 @@
   </div>
 
   <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Smooth scroll for internal nav
+      const navMenu = document.getElementById("navMenu");
+
+      document.querySelectorAll("#navMenu a[data-target]").forEach((menuItem) => {
+        menuItem.addEventListener("click", function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute("data-target");
+          const targetSection = document.getElementById(targetId);
+
+          if (targetSection) {
+            targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+          navMenu.classList.remove("show");
+        });
+      });
+
+      // If URL contains hash, scroll to it
+      const hash = window.location.hash;
+      if (hash) {
+        const sectionId = hash.substring(1);
+        const targetSection = document.getElementById(sectionId);
+
+        if (targetSection) {
+          setTimeout(() => {
+            targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 100);
+        }
+      }
+    });
+  </script>
+
+  <script>
+    document.querySelectorAll('.feature-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const targetId = card.getAttribute('data-target');
+        const actionType = card.getAttribute('data-action');
+        const targetSection = document.getElementById(targetId);
+
+        if (targetSection) {
+          targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Trigger specific actions based on data-action
+        setTimeout(() => {
+          if (actionType === 'capture') {
+            document.getElementById('startCameraBtn')?.click();
+          } else if (actionType === 'upload') {
+            document.getElementById('uploadBtn')?.click();
+          }
+        }, 500);
+        
+        if (targetId === 'information') {
+          window.location.href = '/information.html';
+        }
+      });
+    });
+  </script>
+
+  <script>
     // Fullscreen image viewer
     const modal = document.getElementById('imageModal');
     const modalImg = document.getElementById('modalImg');
