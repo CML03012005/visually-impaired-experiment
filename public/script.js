@@ -5,14 +5,21 @@ console.log('🔍 script.js loaded');
 // Grab existing elements by ID
 const fileInput = document.getElementById('imageInput');
 const analyzeBtn = document.getElementById('analyzeImageBtn');
-const videoEl = document.getElementById('videoPreview') || document.getElementById('video');
+const videoEl = document.getElementById('videoPreview');
 const imageEl = document.getElementById('imagePreview');
 const startCamBtn = document.getElementById('startCameraBtn');
 const captureBtn = document.getElementById('captureBtn');
-const resultImg = document.getElementById('result') || document.getElementById('annotatedImage');
-const resultList = document.getElementById('resultList') || document.getElementById('resultsSection');
-const previewLabel = document.getElementById('previewLabel');
-const resultLabel = document.getElementById('resultLabel');
+const resultImg = document.getElementById('result');
+const resultList = document.getElementById('resultList');
+const uploadBtn = document.getElementById('uploadBtn');
+
+// UI elements
+const previewBox = document.getElementById('previewBox');
+const resultBox = document.getElementById('resultBox');
+const previewPlaceholder = document.getElementById('previewPlaceholder');
+const resultPlaceholder = document.getElementById('resultPlaceholder');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const detectionCount = document.getElementById('detectionCount');
 
 console.log('📋 Elements found:', {
   fileInput: !!fileInput,
@@ -23,63 +30,77 @@ console.log('📋 Elements found:', {
   captureBtn: !!captureBtn,
   resultImg: !!resultImg,
   resultList: !!resultList,
-  previewLabel: !!previewLabel,
-  resultLabel: !!resultLabel
+  uploadBtn: !!uploadBtn
 });
 
 const hiddenCanvas = document.createElement('canvas');
+let activeStream = null;
 
-// ---------- helpers ----------
+async function dataURLtoBlob(dataURL) {
+  const r = await fetch(dataURL);
+  return await r.blob();
+}
 async function postToDetectFromBlob(blob) {
   console.log('📤 Posting to /api/detect, blob size:', blob.size);
   
-  // Show loading spinner
-  const spinner = document.getElementById('loadingSpinner');
-  if (spinner) spinner.style.display = 'flex';
-  
-  // Hide previous result
-  if (resultImg) resultImg.style.display = 'none';
+  // Show loading overlay
+  if (loadingOverlay) loadingOverlay.style.display = 'flex';
+  if (resultPlaceholder) resultPlaceholder.style.display = 'none';
+  if (resultBox) resultBox.classList.add('result-active');
   
   const fd = new FormData();
   fd.append('image', blob, 'frame.jpg');
+  const res = await fetch('/api/detect', { method: 'POST', body: fd });
+
+  const text = await res.text();
+  console.log('📥 Response status:', res.status);
   
-  try {
-    const res = await fetch('/api/detect', { method: 'POST', body: fd });
-    const text = await res.text();
-    console.log('📥 Response status:', res.status);
-    
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${text}`);
+  // Hide loading overlay
+  if (loadingOverlay) loadingOverlay.style.display = 'none';
+  
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${text}`);
 
-    let data;
-    try { data = JSON.parse(text); } catch { throw new Error(text); }
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error(text); }
 
-    if (data.error) throw new Error(data.error);
-    console.log('✅ Detection results:', data.detections?.length || 0, 'objects found');
-    renderResults(data);
-    return data;
-  } finally {
-    // Hide loading spinner
-    if (spinner) spinner.style.display = 'none';
-  }
+  if (data.error) throw new Error(data.error);
+  console.log('✅ Detection results:', data.detections?.length || 0, 'objects found');
+  renderResults(data);
+  return data;
 }
 
 function renderResults(data) {
   console.log('🎨 Rendering results...');
   
-  // Keep the preview image visible (don't hide it)
+  const dets = data.detections || [];
+  
+  // Update detection count badge
+  if (detectionCount) {
+    detectionCount.textContent = `${dets.length} object${dets.length !== 1 ? 's' : ''}`;
+    detectionCount.style.display = 'inline-block';
+  }
+  
   // Show annotated result image
   if (resultImg && data.image) {
     resultImg.src = `data:image/jpeg;base64,${data.image}`;
     resultImg.style.display = 'block';
+    if (resultPlaceholder) resultPlaceholder.style.display = 'none';
     console.log('✅ Annotated image displayed');
   }
   
   // Update results list
   if (resultList) {
-    const dets = data.detections || [];
     resultList.innerHTML = dets.length
-      ? dets.map(d => `<li>${d.label} — ${(d.conf * 100).toFixed(1)}%</li>`).join('')
-      : '<li>No detections</li>';
+      ? dets.map(d => `<li style="padding: 12px 15px; margin: 8px 0; background: linear-gradient(90deg, #f0f8ff 0%, #ffffff 100%); border-left: 4px solid #28A745; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: #333; font-weight: 500;">
+            <i class="fas fa-tag" style="color: #28A745; margin-right: 8px;"></i>
+            ${d.label}
+          </span>
+          <span style="background: #28A745; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+            ${(d.conf * 100).toFixed(1)}%
+          </span>
+        </li>`).join('')
+      : '<li style="padding: 20px; text-align: center; color: #999; font-style: italic;">No objects detected in this image</li>';
     resultList.parentElement.style.display = 'block';
     console.log('✅ Results list updated');
   }
@@ -92,9 +113,6 @@ async function dataURLtoBlob(dataURL) {
 
 // ---------- Upload flow ----------
 // Upload button click handler
-const uploadBtn = document.getElementById('uploadBtn');
-let activeStream = null; // Track active camera stream
-
 if (uploadBtn && fileInput) {
   console.log('📤 Upload button listener attached');
   uploadBtn.addEventListener('click', () => {
@@ -119,6 +137,9 @@ function stopCamera() {
   if (captureBtn) {
     captureBtn.style.display = 'none';
   }
+  if (startCamBtn) {
+    startCamBtn.style.display = 'inline-flex';
+  }
 }
 
 if (fileInput) {
@@ -133,27 +154,29 @@ if (fileInput) {
       resultImg.style.display = 'none';
       resultImg.src = '';
     }
+    if (resultPlaceholder) resultPlaceholder.style.display = 'block';
+    if (detectionCount) detectionCount.style.display = 'none';
     if (resultList) {
       resultList.innerHTML = '';
       if (resultList.parentElement) resultList.parentElement.style.display = 'none';
     }
+    if (resultBox) resultBox.classList.remove('result-active');
     
-    // show preview
+    // Show preview
     if (imageEl) {
       imageEl.src = URL.createObjectURL(f);
       imageEl.style.display = 'block';
     }
+    if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+    if (previewBox) previewBox.classList.add('active');
+    
     // hide video if running
     if (videoEl) videoEl.style.display = 'none';
-    // hide placeholder
-    const placeholder = document.getElementById('previewPlaceholder');
-    if (placeholder) placeholder.style.display = 'none';
-    // enable analyze button
-    if (analyzeBtn) analyzeBtn.disabled = false;
     
     try { await postToDetectFromBlob(f); }
     catch (e) { 
       console.error('❌ Analysis failed:', e);
+      if (loadingOverlay) loadingOverlay.style.display = 'none';
       alert('Failed to analyze image.\n' + (e.message || e)); 
     }
   });
@@ -170,35 +193,31 @@ async function startCamera() {
     resultImg.style.display = 'none';
     resultImg.src = '';
   }
+  if (resultPlaceholder) resultPlaceholder.style.display = 'block';
+  if (detectionCount) detectionCount.style.display = 'none';
   if (resultList) {
     resultList.innerHTML = '';
     if (resultList.parentElement) resultList.parentElement.style.display = 'none';
   }
+  if (resultBox) resultBox.classList.remove('result-active');
+  if (imageEl) imageEl.style.display = 'none';
   
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    activeStream = stream; // Store the stream so we can stop it later
+    activeStream = stream;
     console.log('✅ Camera stream obtained');
     if (videoEl) {
       videoEl.srcObject = stream;
-      console.log('✅ Video element srcObject set');
-      // Make sure video is visible
       videoEl.style.display = 'block';
-      console.log('✅ Video display set to block');
-      // Hide image preview
-      if (imageEl) imageEl.style.display = 'none';
-      if (resultImg) resultImg.style.display = 'none';
-      // Show capture button
+      console.log('✅ Video element srcObject set');
+      if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+      if (previewBox) previewBox.classList.add('active');
+      // Show capture button, hide start button
       if (captureBtn) {
         captureBtn.style.display = 'inline-flex';
         console.log('✅ Capture button shown');
       }
-      // Hide placeholder
-      const placeholder = document.getElementById('previewPlaceholder');
-      if (placeholder) {
-        placeholder.style.display = 'none';
-        console.log('✅ Placeholder hidden');
-      }
+      if (startCamBtn) startCamBtn.style.display = 'none';
     }
   } catch (e) {
     console.error('❌ Camera error:', e);
@@ -242,16 +261,16 @@ if (captureBtn && videoEl) {
       imageEl.src = hiddenCanvas.toDataURL('image/jpeg', 0.92);
       imageEl.style.display = 'block';
     }
+    // Hide video
+    if (videoEl) videoEl.style.display = 'none';
     
     // Stop camera after capture
     stopCamera();
     
-    // Show start camera button again
-    if (startCamBtn) startCamBtn.style.display = 'inline-flex';
-    
     try { await postToDetectFromBlob(blob); }
     catch (e) { 
       console.error('❌ Analysis failed:', e);
+      if (loadingOverlay) loadingOverlay.style.display = 'none';
       alert('Failed to analyze image.\n' + (e.message || e)); 
     }
   });
