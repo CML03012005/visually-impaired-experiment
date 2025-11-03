@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Home | Object Recognition and Navigation for Visually Impaired Person</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
@@ -21,7 +21,8 @@
           <li><a href="/index.html" data-i18n="home">Home</a></li>
           <li><a href="/information.html" data-i18n="objectInfo">Object information</a></li>
           <li>
-            <select id="languageSelector" style="padding: 8px 12px; border-radius: 4px; border: none; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 14px;">
+            <select id="languageSelector"
+              style="padding: 8px 12px; border-radius: 4px; border: none; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 14px;">
               <option value="en">🇺🇸 English</option>
               <option value="tl">🇵🇭 Tagalog</option>
               <option value="ceb">🇵🇭 Cebuano</option>
@@ -32,45 +33,49 @@
     </div>
   </header>
 
-<main style="padding-top: 5vh;" class="container">
-  <section id="home" class="hero-section">
-    <h2 data-i18n="heroTitle">
-      Enhancing Object Recognition and Navigation for Visually Impaired Person using Deep Learning Algorithm
-    </h2>
-    <p data-i18n="heroDescription">
-      Integrating deep-learning object detection to deliver real-time guidance and obstacle alerts for visually impaired users.
-    </p>
+  <main style="padding-top: 5vh;" class="container">
+    <section id="home" class="hero-section">
+      <h2 data-i18n="heroTitle">
+        Enhancing Object Recognition and Navigation for Visually Impaired Person using Deep Learning Algorithm
+      </h2>
+      <p data-i18n="heroDescription">
+        Integrating deep-learning object detection to deliver real-time guidance and obstacle alerts for visually
+        impaired users.
+      </p>
 
-    <div class="feature-grid">
-      <div class="feature-card" data-target="detect" data-action="capture">
-        <i class="fas fa-camera"></i>
-        <h3 data-i18n="captureTitle">Capture Image</h3>
-        <p data-i18n="captureDesc">Use your device camera to capture an object.</p>
-      </div>
+      <div class="feature-grid">
+        <div class="feature-card" data-target="detect" data-action="capture">
+          <i class="fas fa-camera"></i>
+          <h3 data-i18n="captureTitle">Capture Image</h3>
+          <p data-i18n="captureDesc">Use your device camera to capture an object.</p>
+        </div>
 
-      <div class="feature-card" data-target="detect" data-action="upload">
-        <i class="fas fa-upload"></i>
-        <h3 data-i18n="uploadTitle">Upload Image</h3>
-        <p data-i18n="uploadDesc">Upload an image from your gallery for analysis.</p>
-      </div>
+        <div class="feature-card" data-target="detect" data-action="upload">
+          <i class="fas fa-upload"></i>
+          <h3 data-i18n="uploadTitle">Upload Image</h3>
+          <p data-i18n="uploadDesc">Upload an image from your gallery for analysis.</p>
+        </div>
 
-      <div class="feature-card" data-target="information">
-        <i class="fas fa-lightbulb"></i>
-        <h3 data-i18n="infoTitle">Object Information</h3>
-        <p data-i18n="infoDesc">Learn more about Object Recognition and Navigation and their impact.</p>
+        <div class="feature-card" data-target="information">
+          <i class="fas fa-lightbulb"></i>
+          <h3 data-i18n="infoTitle">Object Information</h3>
+          <p data-i18n="infoDesc">Learn more about Object Recognition and Navigation and their impact.</p>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
 
     <section id="detect" class="detection-section">
-      <h2>Detect Objects</h2>
+      <h2 data-i18n="detectTitle">Detect Objects</h2>
       <div class="upload-area">
-        <p>Select or capture an image for object detection:</p>
+        <p data-i18n="detectInstructions">Select or capture an image for object detection:</p>
         <input type="file" id="imageInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display: none;">
-        <button id="startCameraBtn" class="btn primary-btn"><i class="fas fa-camera"></i> Use Camera</button>
-        <button id="uploadBtn" class="btn primary-btn"><i class="fas fa-upload"></i> Upload Image</button>
-        <button id="captureBtn" class="btn success-btn" style="display:none;"><i class="fas fa-circle"></i> Capture Photo</button>
+        <button id="startCameraBtn" class="btn primary-btn"><i class="fas fa-camera"></i> <span
+            data-i18n="useCamera">Use Camera</span></button>
+        <button id="uploadBtn" class="btn primary-btn"><i class="fas fa-upload"></i> <span
+            data-i18n="uploadImage">Upload Image</span></button>
+        <button id="captureBtn" class="btn success-btn" style="display:none;"><i class="fas fa-circle"></i> <span
+            data-i18n="capturePhoto">Capture Photo</span></button>
 
         <!-- Image Display Grid -->
         <div class="image-display-grid">
@@ -78,14 +83,14 @@
           <div class="image-box" id="previewBox">
             <div class="image-box-header preview-header">
               <i class="fas fa-image"></i>
-              <span>Original Image</span>
+              <span data-i18n="originalImage">Original Image</span>
             </div>
             <div class="image-box-content" id="previewContent">
               <video id="videoPreview" autoplay playsinline style="display:none;"></video>
               <img id="imagePreview" style="display:none;">
               <div class="placeholder-content" id="previewPlaceholder">
                 <i class="fas fa-image"></i>
-                <p>No image selected</p>
+                <p data-i18n="noImageSelected">No image selected</p>
               </div>
             </div>
           </div>
@@ -94,37 +99,39 @@
           <div class="image-box" id="resultBox">
             <div class="image-box-header result-header">
               <i class="fas fa-check-circle"></i>
-              <span>Detection Result</span>
-              <span class="detection-badge" id="detectionCount" style="display:none;">0 objects</span>
+              <span data-i18n="detectionResult">Detection Result</span>
+              <span class="detection-badge" id="detectionCount" style="display:none;">0 <span
+                  data-i18n="objects">objects</span></span>
             </div>
             <div class="image-box-content" id="resultContent">
               <img id="result" style="display:none;">
               <div class="placeholder-content" id="resultPlaceholder">
                 <i class="fas fa-search"></i>
-                <p>Analysis result will appear here</p>
+                <p data-i18n="resultWillAppear">Analysis result will appear here</p>
               </div>
               <!-- Loading Overlay -->
               <div class="loading-overlay" id="loadingOverlay" style="display:none;">
                 <div class="spinner"></div>
-                <div class="loading-text">Analyzing Image...</div>
-                <div class="loading-subtext">This may take 5-15 seconds</div>
+                <div class="loading-text" data-i18n="analyzing">Analyzing Image...</div>
+                <div class="loading-subtext" data-i18n="mayTakeTime">This may take 5-15 seconds</div>
               </div>
             </div>
           </div>
         </div>
 
         <button id="analyzeImageBtn" class="btn success-btn" disabled style="margin-top: 20px; display:none;">
-          <i class="fas fa-search"></i> Analyze Image
+          <i class="fas fa-search"></i> <span data-i18n="analyzeImage">Analyze Image</span>
         </button>
       </div>
 
       <div id="resultsSection" class="results-area" style="display:none;">
-        <h3>Detected Objects</h3>
+        <h3 data-i18n="detectedObjects">Detected Objects</h3>
         <ul id="resultList" style="list-style: none; padding: 0;">
           <!-- Results will be populated here by script.js -->
         </ul>
       </div>
     </section>
+
   </main>
 
   <footer>
@@ -191,7 +198,7 @@
             document.getElementById('uploadBtn')?.click();
           }
         }, 500);
-        
+
         if (targetId === 'information') {
           window.location.href = '/information.html';
         }
@@ -205,7 +212,7 @@
     const modalImg = document.getElementById('modalImg');
     const resultImgs = document.getElementById('result');
     const imagePreview = document.getElementById('imagePreview');
-    
+
     // Make both preview and result clickable for fullscreen
     if (resultImgs) {
       resultImgs.addEventListener('click', () => {
@@ -224,7 +231,7 @@
         }
       });
     }
-    
+
     if (modal) {
       modal.addEventListener('click', () => {
         modal.style.display = 'none';
