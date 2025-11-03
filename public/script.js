@@ -36,45 +36,12 @@ console.log('📋 Elements found:', {
 const hiddenCanvas = document.createElement('canvas');
 let activeStream = null;
 
-// ===== OPTIMIZATION: Client-side Image Resize =====
-async function resizeImage(blob, maxWidth = 640) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        
-        // Only resize if image is larger than maxWidth
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Convert to blob with good quality
-        canvas.toBlob((resizedBlob) => {
-          console.log(`📐 Resized: ${img.width}x${img.height} → ${width}x${height}`);
-          console.log(`📦 Size: ${(blob.size / 1024).toFixed(1)}KB → ${(resizedBlob.size / 1024).toFixed(1)}KB`);
-          resolve(resizedBlob);
-        }, 'image/jpeg', 0.85);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(blob);
-  });
-}
-
+// Convert dataURL to Blob
 async function dataURLtoBlob(dataURL) {
   const r = await fetch(dataURL);
   return await r.blob();
 }
+
 async function postToDetectFromBlob(blob) {
   console.log('📤 Posting to /api/detect, blob size:', blob.size);
   
@@ -109,10 +76,9 @@ function renderResults(data) {
   
   const dets = data.detections || [];
   
-  // Update detection count badge with translation
+  // Update detection count badge
   if (detectionCount) {
-    const objectsText = dets.length === 1 ? t('object') : t('objects');
-    detectionCount.textContent = `${dets.length} ${objectsText}`;
+    detectionCount.textContent = `${dets.length} object${dets.length !== 1 ? 's' : ''}`;
     detectionCount.style.display = 'inline-block';
   }
   
@@ -126,7 +92,6 @@ function renderResults(data) {
   
   // Update results list
   if (resultList) {
-    const confidenceText = t('confidence');
     resultList.innerHTML = dets.length
       ? dets.map(d => `<li style="padding: 12px 15px; margin: 8px 0; background: linear-gradient(90deg, #f0f8ff 0%, #ffffff 100%); border-left: 4px solid #28A745; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
           <span style="color: #333; font-weight: 500;">
@@ -137,15 +102,10 @@ function renderResults(data) {
             ${(d.conf * 100).toFixed(1)}%
           </span>
         </li>`).join('')
-      : `<li style="padding: 20px; text-align: center; color: #999; font-style: italic;">${t('noObjectsDetected')}</li>`;
+      : '<li style="padding: 20px; text-align: center; color: #999; font-style: italic;">No objects detected in this image</li>';
     resultList.parentElement.style.display = 'block';
     console.log('✅ Results list updated');
   }
-}
-
-async function dataURLtoBlob(dataURL) {
-  const r = await fetch(dataURL);
-  return await r.blob();
 }
 
 // ---------- Upload flow ----------
@@ -277,21 +237,6 @@ if (videoEl && !startCamBtn) {
   startCamera();
 }
 
-if (startCamBtn) {
-  console.log('🎥 Camera button listener attached');
-  startCamBtn.addEventListener('click', () => {
-    console.log('🖱️ Camera button clicked!');
-    startCamera();
-  });
-} else {
-  console.warn('⚠️ startCameraBtn not found');
-}
-
-if (videoEl && !startCamBtn) {
-  console.log('🎥 Auto-starting camera (no button found)');
-  startCamera();
-}
-
 // ---------- Capture from camera ----------
 if (captureBtn && videoEl) {
   console.log('📸 Capture button listener attached');
@@ -361,45 +306,6 @@ if (analyzeBtn) {
       alert('No image to analyze. Upload a photo or start the camera.');
     } catch (e) {
       console.error('❌ Analysis failed:', e);
-      alert('Failed to analyze image.\n' + (e.message || e));
-    }
-  });
-}
-
-// ---------- Explicit Analyze button ----------
-if (analyzeBtn) {
-  console.log('🔍 Analyze button listener attached');
-  analyzeBtn.addEventListener('click', async () => {
-    console.log('🖱️ Analyze button clicked!');
-    try {
-      // 1) prefer file input
-      if (fileInput?.files?.[0]) {
-        console.log('📂 Using file input');
-        await postToDetectFromBlob(fileInput.files[0]);
-        return;
-      }
-      // 2) else use preview image (dataURL) if available
-      if (imageEl?.src?.startsWith('data:')) {
-        console.log('🖼️ Using preview image data URL');
-        const blob = await dataURLtoBlob(imageEl.src);
-        await postToDetectFromBlob(blob);
-        return;
-      }
-      // 3) else capture current video frame
-      if (videoEl?.videoWidth) {
-        console.log('📹 Capturing current video frame');
-        hiddenCanvas.width = videoEl.videoWidth;
-        hiddenCanvas.height = videoEl.videoHeight;
-        hiddenCanvas.getContext('2d').drawImage(videoEl, 0, 0);
-        const blob = await new Promise(r => hiddenCanvas.toBlob(r, 'image/jpeg', 0.92));
-        await postToDetectFromBlob(blob);
-        return;
-      }
-      console.warn('⚠️ No image source available');
-      alert('No image to analyze. Upload a photo or start the camera.');
-    } catch (e) {
-      console.error('❌ Analysis failed:', e);
-      if (loadingOverlay) loadingOverlay.style.display = 'none';
       alert('Failed to analyze image.\n' + (e.message || e));
     }
   });
