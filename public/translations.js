@@ -215,8 +215,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (langSelector) {
     langSelector.addEventListener('change', () => {
       const selectedLang = langSelector.value;
-      setLanguage(selectedLang);   // save to localStorage
-      applyTranslations();         // reapply translations immediately
+      setLanguage(selectedLang);   
+      applyTranslations();         
     });
   }
 });
