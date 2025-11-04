@@ -9,7 +9,7 @@ const translations = {
     // Hero Section
     heroTitle: "Enhancing Object Recognition and Navigation for Visually Impaired Person using Deep Learning Algorithm",
     heroDescription: "Integrating deep-learning object detection to deliver real-time guidance and obstacle alerts for visually impaired users.",
-    
+    enableLoc: "Enable Location",
     // Feature Cards
     captureTitle: "Capture Image",
     captureDesc: "Use your device camera to capture an object.",
@@ -84,7 +84,7 @@ const translations = {
     // Hero Section
     heroTitle: "Pagpapahusay ng Pagkilala ng Bagay at Nabigasyon para sa Taong may Kapansanan sa Paningin gamit ang Deep Learning Algorithm",
     heroDescription: "Pagsasama ng deep-learning object detection upang magbigay ng real-time na gabay at babala sa sagabal para sa mga gumagamit na may kapansanan sa paningin.",
-    
+    enableLoc: "Paganahin ang Lokasyon",
     // Feature Cards
     captureTitle: "Kunan ng Larawan",
     captureDesc: "Gamitin ang camera ng iyong device upang kunan ang isang bagay.",
@@ -153,7 +153,7 @@ const translations = {
     // Hero Section
     heroTitle: "Pagpauswag sa Pag-ila sa Butang ug Nabigasyon alang sa Tawo nga Adunay Kakulangan sa Panan-aw gamit ang Deep Learning Algorithm",
     heroDescription: "Paghiusa sa deep-learning object detection aron makahatag og real-time nga giya ug pasidaan sa mga babag alang sa mga tiggamit nga adunay kakulangan sa panan-aw.",
-    
+    enableLoc: "I-enable ang Lokasyon",
     // Feature Cards
     captureTitle: "Kuhaa ang Hulagway",
     captureDesc: "Gamita ang camera sa imong device aron kuhaan ang usa ka butang.",
@@ -291,30 +291,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ====== Voice Announcement for Detection Results ======
-window.announceResults = function (detections) {
-  if (!('speechSynthesis' in window)) {
-    console.warn('Speech synthesis not supported in this browser.');
-    return;
-  }
+function announceResults(detections) {
+  if (!detections || !detections.length) return;
 
-  const lang = getCurrentLanguage();
-  let utteranceText = '';
+  // 1️⃣ Get current language selection
+  const sel = document.getElementById('languageSelector');
+  const lang = sel?.value || 'en';
 
-  if (!detections || detections.length === 0) {
-    utteranceText = translations[lang]?.voiceNoObjects || translations['en'].voiceNoObjects;
+  // 2️⃣ Map to SpeechSynthesis language codes
+  const langMap = { en: 'en-US', tl: 'fil-PH', ceb: 'ceb-PH' };
+  const speechLang = langMap[lang] || 'en-US';
+
+  // 3️⃣ Prepare spoken text
+  let text;
+  if (lang === 'en') {
+    text = `Detected ${detections.length} object${detections.length > 1 ? 's' : ''}.`;
+  } else if (lang === 'tl') {
+    text = `Nakakita ng ${detections.length} bagay${detections.length > 1 ? 's' : ''}.`;
+  } else if (lang === 'ceb') {
+    text = `Nakadetect og ${detections.length} object${detections.length > 1 ? 's' : ''}.`;
   } else {
-    // Build announcement like: "Detected: person, chair, with confidence 85%"
-    const detectedLabels = detections.map(d => d.label).join(', ');
-    utteranceText = `${translations[lang]?.voiceDetected || 'Detected'} ${detectedLabels}. ${translations[lang]?.voiceAnalysisComplete || 'Analysis complete.'}`;
+    text = `Detected ${detections.length} object${detections.length > 1 ? 's' : ''}.`;
   }
 
-  const utterance = new SpeechSynthesisUtterance(utteranceText);
-  utterance.lang = lang === 'tl' ? 'tl-PH' : (lang === 'ceb' ? 'en-US' : 'en-US'); // Cebuano uses English TTS
-  utterance.rate = 1;
-  utterance.pitch = 1;
-  
-  // Stop any ongoing speech before speaking again
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-};
+  // 4️⃣ Speak using Web Speech API
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = speechLang;
+  window.speechSynthesis.speak(utter);
+}
+
 
