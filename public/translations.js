@@ -309,7 +309,7 @@ function announceResults(detections) {
   } else if (lang === 'tl') {
     text = `Nakakita ng ${detections.length} bagay${detections.length > 1 ? 's' : ''}.`;
   } else if (lang === 'ceb') {
-    text = `Nakadetect og ${detections.length} object${detections.length > 1 ? 's' : ''}.`;
+    text = `Nakadetect og ${detections.length} butang${detections.length > 1 ? 's' : ''}.`;
   } else {
     text = `Detected ${detections.length} object${detections.length > 1 ? 's' : ''}.`;
   }
