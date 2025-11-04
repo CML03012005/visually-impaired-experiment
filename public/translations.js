@@ -217,3 +217,32 @@ function applyTranslations() {
 document.addEventListener('DOMContentLoaded', () => {
   applyTranslations();
 });
+
+// ====== Voice Announcement for Detection Results ======
+window.announceResults = function (detections) {
+  if (!('speechSynthesis' in window)) {
+    console.warn('Speech synthesis not supported in this browser.');
+    return;
+  }
+
+  const lang = getCurrentLanguage();
+  let utteranceText = '';
+
+  if (!detections || detections.length === 0) {
+    utteranceText = translations[lang]?.voiceNoObjects || translations['en'].voiceNoObjects;
+  } else {
+    // Build announcement like: "Detected: person, chair, with confidence 85%"
+    const detectedLabels = detections.map(d => d.label).join(', ');
+    utteranceText = `${translations[lang]?.voiceDetected || 'Detected'} ${detectedLabels}. ${translations[lang]?.voiceAnalysisComplete || 'Analysis complete.'}`;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(utteranceText);
+  utterance.lang = lang === 'tl' ? 'tl-PH' : (lang === 'ceb' ? 'en-US' : 'en-US'); // Cebuano uses English TTS
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  
+  // Stop any ongoing speech before speaking again
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+};
+
