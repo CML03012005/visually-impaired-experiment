@@ -32,48 +32,81 @@
     });
   }
 
-  async function autoAskAndEmbed() {
-    // Require HTTPS (or localhost) para gumana ang geolocation
-    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-      setStatus('Geolocation requires HTTPS (or localhost).');
-      return;
-    }
+async function autoAskAndEmbed() {
+  const iframe = document.getElementById('gmIframe');
 
-    // If Permissions API is available, check state for nicer UX
-    try {
-      if (navigator.permissions && navigator.permissions.query) {
-        const p = await navigator.permissions.query({ name: 'geolocation' });
-        if (p.state === 'granted') {
+  // Require HTTPS (or localhost)
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    setStatus('Geolocation requires HTTPS (or localhost).');
+    return;
+  }
+
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const p = await navigator.permissions.query({ name: 'geolocation' });
+
+      // 🔥 Watch for permission changes dynamically
+      p.onchange = async () => {
+        if (p.state === 'denied') {
+          // User blocked location → clear data and hide map
+          localStorage.removeItem('userLocation');
+          if (iframe) iframe.style.display = 'none';
+          setStatus('Location access blocked. Please allow location access.');
+          setCoords('--', '--');
+          document.getElementById('enableLocationBtn').style.display = 'inline-block';
+        }
+        else if (p.state === 'granted') {
           const { lat, lon, acc } = await requestLocationOnce();
           setCoords(lat, lon);
           embedMap(lat, lon, acc);
-          return;
         }
-        if (p.state === 'denied') {
-          setStatus('Location permission is blocked. Enable it in your browser settings.');
-          document.getElementById('enableLocationBtn').style.display = 'inline-block';
-          return;
-        }
-        // p.state === 'prompt' → proceed to immediate request (will show prompt)
-      }
-    } catch (_) { /* ignore */ }
+      };
 
-    // Aggressive auto-prompt on first paint
-    try {
-      setStatus('Asking for your location…');
-      const { lat, lon, acc } = await requestLocationOnce();
-      setCoords(lat, lon);
-      embedMap(lat, lon, acc);
-    } catch (e) {
-      console.warn('Geo error:', e);
-      const btn = document.getElementById('enableLocationBtn');
-      btn.style.display = 'inline-block';
-      if (e && e.code === 1) setStatus('Permission denied by user.');
-      else if (e && e.code === 2) setStatus('Position unavailable.');
-      else if (e && e.code === 3) setStatus('Location request timed out.');
-      else setStatus('Unable to get your location.');
+      // If permission already granted
+      if (p.state === 'granted') {
+        const { lat, lon, acc } = await requestLocationOnce();
+        setCoords(lat, lon);
+        embedMap(lat, lon, acc);
+        return;
+      }
+
+      // If permission denied
+      if (p.state === 'denied') {
+        localStorage.removeItem('userLocation'); // 🚫 Clear old data
+        if (iframe) iframe.style.display = 'none';
+        setStatus('Location permission blocked. Please enable it in browser settings.');
+        document.getElementById('enableLocationBtn').style.display = 'inline-block';
+        return;
+      }
+    }
+
+    // If we reach here, permission = "prompt"
+    setStatus('Asking for your location…');
+    const { lat, lon, acc } = await requestLocationOnce();
+    setCoords(lat, lon);
+    embedMap(lat, lon, acc);
+
+  } catch (e) {
+    console.warn('Geo error:', e);
+    const btn = document.getElementById('enableLocationBtn');
+    btn.style.display = 'inline-block';
+
+    if (e && e.code === 1) {
+      // 🚫 Permission denied by user
+      setStatus('Permission denied by user.');
+      localStorage.removeItem('userLocation'); // ❌ delete stored coords
+      if (iframe) iframe.style.display = 'none';
+      setCoords('--', '--');
+    } else if (e && e.code === 2) {
+      setStatus('Position unavailable.');
+    } else if (e && e.code === 3) {
+      setStatus('Location request timed out.');
+    } else {
+      setStatus('Unable to get your location.');
     }
   }
+}
+
 
   // Fallback button if the browser blocked auto-prompt (some Safari/iOS configs)
   document.getElementById('enableLocationBtn')?.addEventListener('click', async () => {
@@ -94,10 +127,30 @@
 
 
 // On page load — use saved location from home page
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const saved = localStorage.getItem('userLocation');
-  
-  if (saved) {
+  const iframe = document.getElementById('gmIframe');
+
+  // Check permission before showing saved map
+  let permission = 'prompt';
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const p = await navigator.permissions.query({ name: 'geolocation' });
+      permission = p.state;
+    }
+  } catch (_) { /* ignore */ }
+
+  if (permission === 'denied') {
+    // 🚫 Don't use saved location if user blocked permission
+    localStorage.removeItem('userLocation');
+    if (iframe) iframe.style.display = 'none';
+    setCoords('--', '--');
+    setStatus('Location access is blocked. Please allow location access.');
+    document.getElementById('enableLocationBtn').style.display = 'inline-block';
+    return;
+  }
+
+  if (saved && permission === 'granted') {
     try {
       const { lat, lon, acc } = JSON.parse(saved);
       setCoords(lat, lon);
@@ -113,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn) btn.style.display = 'inline-block';
   }
 });
+
 
 
 

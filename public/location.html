@@ -52,16 +52,30 @@
     </div>
   </header>
 
-  <main>
-    <div class="map-wrap">
-      <div class="map-head">
-        <h2 data-i18n="locationTitle"><i class="fas fa-location-arrow"></i> Your Location Map</h2>
-      </div>
-      <div id="mapStatus" data-i18n="locationUsingSaved">Asking for your location…</div>
-      <p class="status">Lat/Lon: <span id="gmCoords">--</span></p>
-      <iframe id="gmIframe" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+<main>
+  <div class="map-wrap">
+    <div class="map-head">
+      <h2 data-i18n="locationTitle">
+        <i class="fas fa-location-arrow"></i> Your Location Map
+      </h2>
     </div>
-  </main>
+
+    <div id="mapStatus" data-i18n="locationUsingSaved">Asking for your location…</div>
+    <p class="status">Lat/Lon: <span id="gmCoords">--</span></p>
+
+    <!-- Google Map -->
+    <iframe 
+      id="gmIframe" 
+      loading="lazy" 
+      referrerpolicy="no-referrer-when-downgrade"
+      style="width:100%;height:300px;display:none;border:0;">
+    </iframe>
+
+    <!-- Optional: button if permission was blocked -->
+    <br><button id="enableLocationBtn" style="display:none;">Enable Location</button>
+  </div>
+</main>
+
 
   <footer>
     <div class="container">
