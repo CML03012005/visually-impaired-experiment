@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'https://object-detection-ml-y5v2.onrender.com/';
 
 // Middlewares
+app.set('trust proxy', true);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

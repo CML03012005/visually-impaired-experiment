@@ -93,7 +93,29 @@
   });
 
   // Auto-request on page load (this will prompt immediately)
-  document.addEventListener('DOMContentLoaded', autoAskAndEmbed);
+  // New — only use location if already granted
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const p = await navigator.permissions.query({ name: 'geolocation' });
+      if (p.state === 'granted') {
+        // ✅ Already granted — safe to get and embed silently
+        const { lat, lon, acc } = await requestLocationOnce();
+        setCoords(lat, lon);
+        embedMap(lat, lon, acc);
+      } else {
+        // 🚫 Not granted — don’t ask again, just show friendly message
+        setStatus('Location access not yet granted. Please allow it from the home page.');
+        document.getElementById('enableLocationBtn').style.display = 'inline-block';
+      }
+      return;
+    }
+  } catch (e) {
+    console.warn('Permission query failed', e);
+    setStatus('Unable to check location permission.');
+  }
+});
+
 
   // Optional: kapag nagpalit ng language sa dropdown, i-refresh lang ang iframe para magbago ang map labels
   document.getElementById('langSelect')?.addEventListener('change', () => {
