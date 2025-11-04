@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Object Information | Object Recognition and Navigation</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     @media (max-width: 1920px) {
@@ -28,14 +28,23 @@
 
 <body>
   <header>
-    <div class="container" >
+    <div class="container">
       <button class="menu-toggle"><i class="fas fa-bars"></i></button>
-      <a style="color: #fff;text-decoration: none;" href="/index.html"><h1><i ></i>Object Recognition and Navigation </h1></a>
-      <nav >
+      <a style="color: #fff;text-decoration: none;" href="/index.html">
+        <h1 data-i18n="siteName">Object Recognition and Navigation</h1>
+      </a>
+      <nav>
         <ul id="navMenu">
-          <li><a href="index.html">Home</a></li>
-          
-          <li ><a href="/information">Object Information</a></li>
+          <li><a href="/index.html" data-i18n="home">Home</a></li>
+          <li><a href="/information.html" data-i18n="objectInfo">Object information</a></li>
+          <li>
+            <select id="languageSelector"
+              style="padding: 8px 12px; border-radius: 4px; border: none; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 14px;">
+              <option value="en">🇺🇸 English</option>
+              <option value="tl">🇵🇭 Tagalog</option>
+              <option value="ceb">🇵🇭 Cebuano</option>
+            </select>
+          </li>
         </ul>
       </nav>
     </div>
@@ -106,6 +115,8 @@
 
     loadDiseaseCatalog();
   </script>
+
+  <script src="./translations.js" defer></script>
 </body>
 
 </html>

@@ -51,7 +51,14 @@ const translations = {
     tooManyRequests: "Too many requests. Please try again later.",
     
     // Footer
-    copyright: "© 2025 Object Recognition and Navigation. All rights reserved."
+    copyright: "© 2025 Object Recognition and Navigation. All rights reserved.",
+    
+    // Voice announcements
+    voiceDetected: "Detected",
+    voiceWith: "with",
+    voiceConfidence: "confidence",
+    voiceNoObjects: "No objects detected in this image",
+    voiceAnalysisComplete: "Analysis complete"
   },
   
   tl: { // Tagalog
@@ -209,14 +216,4 @@ function applyTranslations() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
   applyTranslations();
-
-  // Bind language selector if it exists
-  const langSelector = document.getElementById('languageSelector');
-  if (langSelector) {
-    langSelector.addEventListener('change', () => {
-      const selectedLang = langSelector.value;
-      setLanguage(selectedLang);   
-      applyTranslations();         
-    });
-  }
 });

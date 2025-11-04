@@ -141,6 +141,13 @@ function renderResults(data) {
     resultList.parentElement.style.display = 'block';
     console.log('✅ Results list updated');
   }
+  
+  // ===== ANNOUNCE RESULTS WITH VOICE =====
+  if (typeof announceResults === 'function') {
+    announceResults(dets);
+  } else {
+    console.warn('⚠️ announceResults function not found. Make sure translations.js is loaded.');
+  }
 }
 
 async function dataURLtoBlob(dataURL) {
@@ -214,7 +221,7 @@ if (fileInput) {
     catch (e) { 
       console.error('❌ Analysis failed:', e);
       if (loadingOverlay) loadingOverlay.style.display = 'none';
-      alert('Failed to analyze image.\n' + (e.message || e)); 
+      alert(t('failedToAnalyze') + '\n' + (e.message || e));
     }
   });
 }
@@ -258,7 +265,7 @@ async function startCamera() {
     }
   } catch (e) {
     console.error('❌ Camera error:', e);
-    alert('Cannot access camera.\n' + (e.message || e));
+    alert(t('cannotAccessCamera') + '\n' + (e.message || e));
   }
 }
 
@@ -396,11 +403,11 @@ if (analyzeBtn) {
         return;
       }
       console.warn('⚠️ No image source available');
-      alert('No image to analyze. Upload a photo or start the camera.');
+      alert(t('noImageToAnalyze'));
     } catch (e) {
       console.error('❌ Analysis failed:', e);
       if (loadingOverlay) loadingOverlay.style.display = 'none';
-      alert('Failed to analyze image.\n' + (e.message || e));
+      alert(t('failedToAnalyze') + '\n' + (e.message || e));
     }
   });
 }
