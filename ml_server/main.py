@@ -34,7 +34,7 @@ async def detect(image: UploadFile = File(...)):
     try:
         data = await image.read()
         img = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
-        r = model(img, imgsz=640, conf=0.25, verbose=False)[0]
+        r = model(img, imgsz=640, conf=0.5, iou=0.6, verbose=False)[0]
         annotated = r.plot()
         ok, buf = cv2.imencode(".jpg", annotated)
         if not ok:

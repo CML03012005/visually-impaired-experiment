@@ -92,29 +92,28 @@
     }
   });
 
-  // Auto-request on page load (this will prompt immediately)
-  // New — only use location if already granted
-document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    if (navigator.permissions && navigator.permissions.query) {
-      const p = await navigator.permissions.query({ name: 'geolocation' });
-      if (p.state === 'granted') {
-        // ✅ Already granted — safe to get and embed silently
-        const { lat, lon, acc } = await requestLocationOnce();
-        setCoords(lat, lon);
-        embedMap(lat, lon, acc);
-      } else {
-        // 🚫 Not granted — don’t ask again, just show friendly message
-        setStatus('Location access not yet granted. Please allow it from the home page.');
-        document.getElementById('enableLocationBtn').style.display = 'inline-block';
-      }
-      return;
+
+// On page load — use saved location from home page
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('userLocation');
+  
+  if (saved) {
+    try {
+      const { lat, lon, acc } = JSON.parse(saved);
+      setCoords(lat, lon);
+      embedMap(lat, lon, acc);
+      setStatus(`Using saved location (±${acc} m).`);
+    } catch (err) {
+      console.warn('Failed to parse saved location:', err);
+      setStatus('Unable to read saved location data.');
     }
-  } catch (e) {
-    console.warn('Permission query failed', e);
-    setStatus('Unable to check location permission.');
+  } else {
+    setStatus('Location not yet available. Please enable it from the home page.');
+    const btn = document.getElementById('enableLocationBtn');
+    if (btn) btn.style.display = 'inline-block';
   }
 });
+
 
 
   // Optional: kapag nagpalit ng language sa dropdown, i-refresh lang ang iframe para magbago ang map labels
