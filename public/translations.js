@@ -216,7 +216,29 @@ function applyTranslations() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
   applyTranslations();
+
+  // ✅ Re-bind any dynamic event listeners after translation
+  const langSelect = document.getElementById('langSelect');
+  if (langSelect) {
+    langSelect.addEventListener('change', () => {
+      // Save selected language
+      setLanguage(langSelect.value);
+      applyTranslations();
+
+      // Refresh Google Map language if available
+      const iframe = document.getElementById('gmIframe');
+      if (iframe && iframe.src) {
+        const coordsText = document.getElementById('gmCoords')?.textContent || '';
+        const [lat, lon] = coordsText.split(',').map(s => s?.trim());
+        if (lat && lon) {
+          const hl = (langSelect.value === 'tl') ? 'fil' : 'en';
+          iframe.src = `https://www.google.com/maps?q=${lat},${lon}&z=16&hl=${hl}&output=embed`;
+        }
+      }
+    });
+  }
 });
+
 
 // ====== Voice Announcement for Detection Results ======
 window.announceResults = function (detections) {
