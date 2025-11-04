@@ -13,11 +13,13 @@
         grid-template-columns: repeat(3, 1fr) !important;
       }
     }
+
     @media (max-width: 1080px) {
       .feature-grid {
         grid-template-columns: repeat(2, 1fr) !important;
       }
     }
+
     @media (max-width: 768px) {
       .feature-grid {
         grid-template-columns: repeat(1, 1fr) !important;
@@ -51,36 +53,42 @@
     </div>
   </header>
 
-  <main class="container"  style="padding-top: 5vh;">
-<section id="home" class="hero-section">
-      <h2>Object Information &nbsp;</h2>
-      <!-- <p>Integrating deep-learning object detection to deliver real-time guidance and obstacle alerts for visually impaired users. .&nbsp;</p> -->
+  <main class="container" style="padding-top: 5vh;">
+    <section id="home" class="hero-section">
+      <h2 data-i18n="objectInformationTitle">Object Information</h2>
+
       <div class="feature-grid">
         <div class="feature-card">
           <i class="fas fa-person"></i>
-          <h3>Peoples</h3>
-          <p>The camera automatically detects and identifies people in real time.</p>
+          <h3 data-i18n="objectPeopleTitle">People</h3>
+          <p data-i18n="objectPeopleDesc">
+            The camera automatically detects and identifies people in real time.
+          </p>
         </div>
 
         <div class="feature-card">
           <i class="fas fa-door-open"></i>
-          <h3>Doors</h3>
-          <p>The system recognizes doors and helps indicate their location and orientation.</p>
+          <h3 data-i18n="objectDoorsTitle">Doors</h3>
+          <p data-i18n="objectDoorsDesc">
+            The system recognizes doors and helps indicate their location and orientation.
+          </p>
         </div>
 
         <div class="feature-card">
           <i class="fas fa-stairs"></i>
-          <h3>Stairs</h3>
-          <p>The camera detects stairs to assist with safe navigation and movement.</p>
+          <h3 data-i18n="objectStairsTitle">Stairs</h3>
+          <p data-i18n="objectStairsDesc">
+            The camera detects stairs to assist with safe navigation and movement.
+          </p>
         </div>
       </div>
-		
     </section>
   </main>
 
+
   <footer>
     <div class="container">
-      <p>© 2025 Object Recognition and Navigation. All rights reserved.&nbsp;</p>
+      <p data-i18n="copyright">&copy; 2025 Object Recognition and Navigation. All rights reserved.</p>
     </div>
   </footer>
 

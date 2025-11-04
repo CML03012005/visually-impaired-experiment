@@ -2,7 +2,7 @@
   function setStatus(msg){ const el = document.getElementById('mapStatus'); if (el) el.textContent = msg || ''; }
   function setCoords(lat, lon){ const el = document.getElementById('gmCoords'); if (el) el.textContent = (lat && lon) ? `${lat}, ${lon}` : '--'; }
   function mapsLangParam() {
-    const sel = document.getElementById('langSelect');
+    const sel = document.getElementById('languageSelector');
     const v = (sel && sel.value) ? sel.value : 'en';
     // Google Maps web UI supports 'en' and 'fil' (walang 'ceb'), kaya ceb -> en
     return (v === 'tl') ? 'fil' : 'en';
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // Optional: kapag nagpalit ng language sa dropdown, i-refresh lang ang iframe para magbago ang map labels
-  document.getElementById('langSelect')?.addEventListener('change', () => {
+  document.getElementById('languageSelector')?.addEventListener('change', () => {
     const iframe = document.getElementById('gmIframe');
     if (!iframe || !iframe.src) return;
     const [lat, lon] = (document.getElementById('gmCoords')?.textContent || '').split(',').map(s=>s?.trim());

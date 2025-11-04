@@ -55,9 +55,9 @@
   <main>
     <div class="map-wrap">
       <div class="map-head">
-        <h2><i class="fas fa-location-arrow"></i> Your Location Map</h2>
+        <h2 data-i18n="locationTitle"><i class="fas fa-location-arrow"></i> Your Location Map</h2>
       </div>
-      <div id="mapStatus">Asking for your location…</div>
+      <div id="mapStatus" data-i18n="locationUsingSaved">Asking for your location…</div>
       <p class="status">Lat/Lon: <span id="gmCoords">--</span></p>
       <iframe id="gmIframe" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
@@ -65,11 +65,13 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 Object Recognition and Navigation. All rights reserved.</p>
+      <p data-i18n="copyright">&copy; 2025 Object Recognition and Navigation. All rights reserved.</p>
     </div>
   </footer>
 
+  <script src="./translations.js"></script>
   <script src="./loc.js"></script>
+
 
 
 </body>

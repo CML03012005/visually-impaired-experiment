@@ -58,7 +58,21 @@ const translations = {
     voiceWith: "with",
     voiceConfidence: "confidence",
     voiceNoObjects: "No objects detected in this image",
-    voiceAnalysisComplete: "Analysis complete"
+    voiceAnalysisComplete: "Analysis complete",
+
+    // Information objects
+    objectInformationTitle: "Object Information",
+    objectPeopleTitle: "People",
+    objectPeopleDesc: "The camera automatically detects and identifies people in real time.",
+    objectDoorsTitle: "Doors",
+    objectDoorsDesc: "The system recognizes doors and helps indicate their location and orientation.",
+    objectStairsTitle: "Stairs",
+    objectStairsDesc: "The camera detects stairs to assist with safe navigation and movement.",
+
+    // Location title
+    locationTitle: "Your Location Map",
+    locationUsingSaved: "Using saved location"
+
   },
   
   tl: { // Tagalog
@@ -110,9 +124,24 @@ const translations = {
     failedToAnalyze: "Nabigo ang pagsusuri ng larawan.",
     noImageToAnalyze: "Walang larawan na susuriin. Mag-upload ng litrato o simulan ang camera.",
     tooManyRequests: "Masyadong maraming kahilingan. Pakisubukan ulit mamaya.",
+
+     // location title
+    locationTitle: "Iyong Lokasyon sa Mapa",
+    locationUsingSaved: "Gamit ang naka-save na lokasyon",
+
+    // Information objects
+    objectInformationTitle: "Impormasyon ng Bagay",
+    objectPeopleTitle: "Tao",
+    objectPeopleDesc: "Awtomatikong natutukoy at nakikilala ng camera ang mga tao sa real time.",
+    objectDoorsTitle: "Mga Pinto",
+    objectDoorsDesc: "Nakikilala ng sistema ang mga pinto at tinutukoy ang kanilang lokasyon at posisyon.",
+    objectStairsTitle: "Hagdan",
+    objectStairsDesc: "Natutukoy ng camera ang mga hagdan upang matulungan sa ligtas na paggalaw at nabigasyon.",
+
     
     // Footer
     copyright: "© 2025 Pagkilala ng Bagay at Nabigasyon. Lahat ng karapatan ay nakalaan."
+
   },
   
   ceb: { // Cebuano
@@ -164,7 +193,21 @@ const translations = {
     failedToAnalyze: "Napakyas ang pagsusi sa hulagway.",
     noImageToAnalyze: "Walay hulagway nga susiha. Pag-upload og litrato o sugdi ang camera.",
     tooManyRequests: "Daghan kaayong mga hangyo. Palihug sulayi pag-usab sa ulahi.",
-    
+
+    // location title
+    locationTitle: "Imong Lokasyon sa Mapa",
+    locationUsingSaved: "Gigamit ang naluwas nga lokasyon (±73 m).",
+
+    // Information objects
+    objectInformationTitle: "Impormasyon sa Butang",
+    objectPeopleTitle: "Tawo",
+    objectPeopleDesc: "Awtomatikong makit-an ug maila sa kamera ang mga tawo sa real time.",
+    objectDoorsTitle: "Mga Pultahan",
+    objectDoorsDesc: "Makaila ang sistema sa mga pultahan ug magpakita sa ilang lokasyon ug direksyon.",
+    objectStairsTitle: "Hagdanan",
+    objectStairsDesc: "Makita sa kamera ang mga hagdanan aron matabangan ka sa luwas nga paglihok ug nabigasyon.",
+
+
     // Footer
     copyright: "© 2025 Pag-ila sa Butang ug Nabigasyon. Tanang katungod gitagana."
   }
@@ -207,20 +250,20 @@ function applyTranslations() {
   });
   
   // Update language selector
-  const langSelector = document.getElementById('languageSelector');
-  if (langSelector) {
-    langSelector.value = lang;
+  const languageSelectoror = document.getElementById('languageSelector');
+  if (languageSelectoror) {
+    languageSelectoror.value = lang;
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   applyTranslations();
 
-  const langSelect = document.getElementById('langSelect');
-  if (langSelect) {
-    langSelect.addEventListener('change', () => {
+  const languageSelector = document.getElementById('languageSelector');
+  if (languageSelector) {
+    languageSelector.addEventListener('change', () => {
       // Save selected language
-      setLanguage(langSelect.value);
+      setLanguage(languageSelector.value);
       applyTranslations();
 
       // 🔁 Refresh map language dynamically (if we're on location.html)
@@ -229,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const coordsText = document.getElementById('gmCoords')?.textContent || '';
         const [lat, lon] = coordsText.split(',').map(s => s?.trim());
         if (lat && lon) {
-          const hl = (langSelect.value === 'tl') ? 'fil' : 'en';
+          const hl = (languageSelector.value === 'tl') ? 'fil' : 'en';
           iframe.src = `https://www.google.com/maps?q=${lat},${lon}&z=16&hl=${hl}&output=embed`;
         } else if (typeof autoAskAndEmbed === 'function') {
           // 🧭 Re-run your location logic if no coords yet
