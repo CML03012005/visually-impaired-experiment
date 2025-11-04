@@ -213,11 +213,9 @@ function applyTranslations() {
   }
 }
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
   applyTranslations();
 
-  // ✅ Re-bind any dynamic event listeners after translation
   const langSelect = document.getElementById('langSelect');
   if (langSelect) {
     langSelect.addEventListener('change', () => {
@@ -225,19 +223,28 @@ document.addEventListener('DOMContentLoaded', () => {
       setLanguage(langSelect.value);
       applyTranslations();
 
-      // Refresh Google Map language if available
+      // 🔁 Refresh map language dynamically (if we're on location.html)
       const iframe = document.getElementById('gmIframe');
-      if (iframe && iframe.src) {
+      if (iframe) {
         const coordsText = document.getElementById('gmCoords')?.textContent || '';
         const [lat, lon] = coordsText.split(',').map(s => s?.trim());
         if (lat && lon) {
           const hl = (langSelect.value === 'tl') ? 'fil' : 'en';
           iframe.src = `https://www.google.com/maps?q=${lat},${lon}&z=16&hl=${hl}&output=embed`;
+        } else if (typeof autoAskAndEmbed === 'function') {
+          // 🧭 Re-run your location logic if no coords yet
+          autoAskAndEmbed();
         }
       }
     });
   }
+
+  // 🧩 Optional: On the location page, ensure map updates after translation
+  if (document.getElementById('gmIframe') && typeof autoAskAndEmbed === 'function') {
+    autoAskAndEmbed();
+  }
 });
+
 
 
 // ====== Voice Announcement for Detection Results ======
