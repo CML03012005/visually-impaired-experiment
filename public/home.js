@@ -13,9 +13,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // ✅ Save to localStorage so other pages can use it
       localStorage.setItem('userLocation', JSON.stringify({ lat, lon, acc }));
+
+      // (Optional) Trigger event for other scripts (like map)
+      window.dispatchEvent(new CustomEvent('locationSaved', { detail: { lat, lon, acc } }));
     },
     (err) => {
       console.warn('⚠️ Location permission denied or blocked:', err);
+
+      // ❌ If user blocked or denied, clear old saved location
+      localStorage.removeItem('userLocation');
+
+      // (Optional) Let other scripts know
+      window.dispatchEvent(new CustomEvent('locationDenied'));
     },
     { enableHighAccuracy: true, timeout: 10000 }
   );

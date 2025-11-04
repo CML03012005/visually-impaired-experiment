@@ -33,79 +33,68 @@
   }
 
 async function autoAskAndEmbed() {
-  const iframe = document.getElementById('gmIframe');
+  const saved = localStorage.getItem('userLocation');
 
-  // Require HTTPS (or localhost)
+  // 1️⃣ Use saved location if available
+  if (saved) {
+    try {
+      const { lat, lon, acc } = JSON.parse(saved);
+      setCoords(lat, lon);
+      embedMap(lat, lon, acc);
+      setStatus(`Using saved location (±${acc} m).`);
+      return; // ✅ done, no need to ask
+    } catch (err) {
+      console.warn('Failed to parse saved location:', err);
+      localStorage.removeItem('userLocation'); // clear corrupted data
+    }
+  }
+
+  // 2️⃣ Require HTTPS (or localhost)
   if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
     setStatus('Geolocation requires HTTPS (or localhost).');
     return;
   }
 
+  // 3️⃣ Use Permissions API for nicer UX
   try {
     if (navigator.permissions && navigator.permissions.query) {
       const p = await navigator.permissions.query({ name: 'geolocation' });
-
-      // 🔥 Watch for permission changes dynamically
-      p.onchange = async () => {
-        if (p.state === 'denied') {
-          // User blocked location → clear data and hide map
-          localStorage.removeItem('userLocation');
-          if (iframe) iframe.style.display = 'none';
-          setStatus('Location access blocked. Please allow location access.');
-          setCoords('--', '--');
-          document.getElementById('enableLocationBtn').style.display = 'inline-block';
-        }
-        else if (p.state === 'granted') {
-          const { lat, lon, acc } = await requestLocationOnce();
-          setCoords(lat, lon);
-          embedMap(lat, lon, acc);
-        }
-      };
-
-      // If permission already granted
       if (p.state === 'granted') {
         const { lat, lon, acc } = await requestLocationOnce();
         setCoords(lat, lon);
         embedMap(lat, lon, acc);
+        localStorage.setItem('userLocation', JSON.stringify({ lat, lon, acc }));
         return;
       }
-
-      // If permission denied
       if (p.state === 'denied') {
-        localStorage.removeItem('userLocation'); // 🚫 Clear old data
-        if (iframe) iframe.style.display = 'none';
-        setStatus('Location permission blocked. Please enable it in browser settings.');
+        setStatus('Location permission is blocked. Enable it in your browser settings.');
         document.getElementById('enableLocationBtn').style.display = 'inline-block';
+        localStorage.removeItem('userLocation'); // clear any old location
         return;
       }
+      // p.state === 'prompt' → proceed to immediate request
     }
+  } catch (_) { /* ignore */ }
 
-    // If we reach here, permission = "prompt"
+  // 4️⃣ Aggressive prompt if no saved location
+  try {
     setStatus('Asking for your location…');
     const { lat, lon, acc } = await requestLocationOnce();
     setCoords(lat, lon);
     embedMap(lat, lon, acc);
-
+    localStorage.setItem('userLocation', JSON.stringify({ lat, lon, acc }));
   } catch (e) {
     console.warn('Geo error:', e);
     const btn = document.getElementById('enableLocationBtn');
-    btn.style.display = 'inline-block';
-
-    if (e && e.code === 1) {
-      // 🚫 Permission denied by user
-      setStatus('Permission denied by user.');
-      localStorage.removeItem('userLocation'); // ❌ delete stored coords
-      if (iframe) iframe.style.display = 'none';
-      setCoords('--', '--');
-    } else if (e && e.code === 2) {
-      setStatus('Position unavailable.');
-    } else if (e && e.code === 3) {
-      setStatus('Location request timed out.');
-    } else {
-      setStatus('Unable to get your location.');
-    }
+    if (btn) btn.style.display = 'inline-block';
+    if (e && e.code === 1) setStatus('Permission denied by user.');
+    else if (e && e.code === 2) setStatus('Position unavailable.');
+    else if (e && e.code === 3) setStatus('Location request timed out.');
+    else setStatus('Unable to get your location.');
+    localStorage.removeItem('userLocation'); // clear any old saved location
   }
 }
+
 
 
   // Fallback button if the browser blocked auto-prompt (some Safari/iOS configs)
