@@ -1546,23 +1546,4 @@ html {
     }
 }
 
-/* mobile */
-/* Mobile-first: nav hidden until toggled */
-header nav { display: none; }
-header nav.show { display: block; }
-.menu-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
 
-/* Desktop: show full nav, hide hamburger */
-@media (min-width: 768px) {
-  .menu-toggle { display: none !important; }
-  header nav { display: block !important; }
-  header nav ul {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-  }
-}

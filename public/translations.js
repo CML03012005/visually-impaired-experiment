@@ -288,51 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// ========== TTS bootstrap + preferred female voice ==========
 
-
-// ====== Voice Announcement for Detection Results ======
-async function announceResults(detections) {
-  if (!detections || !detections.length) return;
-  if (!('speechSynthesis' in window)) {
-    console.warn('TTS not supported in this WebView.');
-    return;
-  }
-
-  await primeTTS();
-
-  const sel = document.getElementById('languageSelector');
-  const lang = sel?.value || 'en';
-
-  const targets = {
-    en: ['en-PH','en-US','en-GB','en-AU'],
-    tl: ['fil-PH','tl-PH','en-PH','en-US','en-GB'],
-    ceb: ['ceb-PH','fil-PH','en-PH','en-US','en-GB']
-  };
-  const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
-  const pick = voices.find(v => targets[lang]?.includes(v.lang))
-            || voices.find(v => v.lang?.startsWith('en'))
-            || voices[0] || null;
-
-  let text;
-  if (lang === 'tl')      text = `Nakakita ng ${detections.length} bagay${detections.length > 1 ? 's' : ''}.`;
-  else if (lang === 'ceb') text = `Nakadetect og ${detections.length} butang${detections.length > 1 ? 's' : ''}.`;
-  else                     text = `Detected ${detections.length} object${detections.length > 1 ? 's' : ''}.`;
-
-  try {
-    speechSynthesis.cancel(); // stop queued utterances
-    const u = new SpeechSynthesisUtterance(text);
-    if (pick) u.voice = pick; else u.lang = 'en-US';
-    speechSynthesis.speak(u);
-  } catch (e) {
-    console.warn('TTS speak failed:', e);
-  }
-}
-
-
-// ---- TTS bootstrap / helpers ----
 let ttsPrimed = false;
 
-function waitForVoices(timeoutMs = 2000) {
+function waitForVoices(timeoutMs = 3000) {
   return new Promise(res => {
     const synth = window.speechSynthesis;
     if (!synth) return res(false);
@@ -342,7 +302,7 @@ function waitForVoices(timeoutMs = 2000) {
       if (ok || Date.now() - start > timeoutMs) return res(ok);
       setTimeout(check, 100);
     };
-    // Touch voices to trigger population
+    // trigger population on some engines
     synth.getVoices();
     if (typeof speechSynthesis.onvoiceschanged !== 'undefined') {
       speechSynthesis.onvoiceschanged = () => res(true);
@@ -354,22 +314,111 @@ function waitForVoices(timeoutMs = 2000) {
 async function primeTTS() {
   if (ttsPrimed || !('speechSynthesis' in window)) return;
   await waitForVoices();
-  // “Unlock” audio on some webviews
-  const u = new SpeechSynthesisUtterance(' ');
-  u.volume = 0;
-  try { window.speechSynthesis.speak(u); } catch (_) {}
+  // unlock audio in some webviews
+  try {
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    speechSynthesis.speak(u);
+  } catch(_) {}
   ttsPrimed = true;
 }
 
-// Prime on first user gestures in your UI
+// Remember the exact voice you used (so we keep the "original female voice")
+function rememberVoice(v) {
+  try { if (v?.name) localStorage.setItem('ttsPreferredVoiceName', v.name); } catch {}
+}
+function loadPreferredVoiceName() {
+  try { return localStorage.getItem('ttsPreferredVoiceName') || ''; } catch { return ''; }
+}
+
+// Optional manual override from console: setPreferredVoice('en-us-x-sfg#female_1-local')
+window.setPreferredVoice = function(name){
+  try { localStorage.setItem('ttsPreferredVoiceName', name); } catch {}
+  console.log('Preferred voice saved:', name);
+};
+
+// Pick a voice: prefer saved voice; else female for lang; else any English/default
+function pickVoice(lang) {
+  const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
+  if (!voices.length) return null;
+
+  const saved = loadPreferredVoiceName();
+  if (saved) {
+    const v = voices.find(v => v.name === saved);
+    if (v) return v;
+  }
+
+  const targets = {
+    en: ['en-PH','en-US','en-GB','en-AU','en'],
+    tl: ['fil-PH','tl-PH','en-PH','en-US','en-GB','en'],
+    ceb:['ceb-PH','fil-PH','en-PH','en-US','en-GB','en']
+  };
+
+  const langMatches = voices.filter(v =>
+    (targets[lang] || []).some(code => (v.lang || '').toLowerCase().startsWith(code.toLowerCase()))
+  );
+
+  const isFemale = v => /female|woman|fem|_female/i.test((v.name || v.voiceURI || ''));
+  const choose =
+    langMatches.find(isFemale) ||
+    langMatches.find(v => v.default) ||
+    langMatches[0] ||
+    voices.find(isFemale) ||
+    voices.find(v => v.default) ||
+    voices[0] || null;
+
+  if (choose) rememberVoice(choose);
+  return choose;
+}
+
+// Prime on first real taps so WebView allows speech
 ['startCameraBtn','uploadBtn','captureBtn'].forEach(id => {
   document.getElementById(id)?.addEventListener('click', primeTTS, { once:true });
 });
 
-// Call primeTTS on first real user gesture
-['startCameraBtn','uploadBtn','captureBtn'].forEach(id => {
-  document.getElementById(id)?.addEventListener('click', primeTTS, { once:true });
-});
+// ========== Speak results: "Analysis complete" + object(s) ==========
 
+async function announceResults(detections) {
+  detections = Array.isArray(detections) ? detections : [];
+  if (!('speechSynthesis' in window)) {
+    console.warn('TTS not supported in this WebView.');
+    return;
+  }
 
+  await primeTTS();
 
+  const sel = document.getElementById('languageSelector');
+  const lang = sel?.value || getCurrentLanguage?.() || 'en';
+
+  // Sort by confidence, collect unique labels
+  const sorted = [...detections].sort((a,b) => (b.conf||0) - (a.conf||0));
+  const labels = [];
+  for (const d of sorted) if (d?.label && !labels.includes(d.label)) labels.push(d.label);
+
+  const complete = t('voiceAnalysisComplete') || 'Analysis complete';
+  const objectsWord = t('objects') || 'objects';
+
+  let spoken;
+  if (!sorted.length) {
+    spoken = `${complete}. ${t('voiceNoObjects') || 'No objects detected in this image'}.`;
+  } else if (sorted.length === 1) {
+    const d = sorted[0];
+    const pct = Math.round((d.conf || 0) * 100);
+    // "Analysis complete. Detected <label> with <xx>% confidence."
+    spoken = `${complete}. ${t('voiceDetected')} ${d.label} ${t('voiceWith')} ${pct}% ${t('voiceConfidence')}.`;
+  } else {
+    const list = labels.slice(0, 3).join(', ');
+    // "Analysis complete. Detected <n> objects: a, b, c."
+    spoken = `${complete}. ${t('voiceDetected')} ${labels.length} ${objectsWord}: ${list}.`;
+  }
+
+  const voice = pickVoice(lang);
+  const u = new SpeechSynthesisUtterance(spoken);
+  if (voice) u.voice = voice; else u.lang = (lang === 'tl' || lang === 'ceb') ? 'en-US' : 'en-US';
+  try {
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  } catch (e) {
+    console.warn('TTS speak failed:', e);
+  }
+}
