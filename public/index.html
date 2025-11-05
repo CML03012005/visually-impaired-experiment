@@ -274,7 +274,7 @@
           <!-- Results will be populated here by script.js -->
         </ul>
       </div>
-      <audio id="ttsAudio" preload="auto" style="display:none"></audio>
+      <audio id="ttsAudio" preload="none" crossorigin="anonymous"></audio>
 
     </section>
 
@@ -333,53 +333,6 @@
       $('#previewPlaceholder')?.style && ($('#previewPlaceholder').style.display = 'none');
       previewBox?.classList.add('active');
       return blob;
-    };
-
-    // Helper: call /detect
-    const detectBlob = async (blob) => {
-      showLoading(true);
-      try {
-        const fd = new FormData();
-        fd.append('image', blob, 'image.jpg');
-
-        const res = await fetch(DETECT_URL, { method: 'POST', body: fd });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-
-        // Show annotated image
-        if (data.image && resultImg) {
-          resultImg.src = 'data:image/jpeg;base64,' + data.image;
-          resultImg.style.display = 'block';
-          $('#resultPlaceholder')?.style && ($('#resultPlaceholder').style.display = 'none');
-          resultBox?.classList.add('result-active');
-        }
-
-        // Fill list + count
-        const dets = Array.isArray(data.detections) ? data.detections : [];
-        if (detCount) {
-          detCount.textContent = (dets.length || 0) + ' ' + (window.t ? t('objects') : 'objects');
-          detCount.style.display = 'inline-block';
-        }
-        if (resultList) {
-          resultList.innerHTML = dets.map(d =>
-            `<li class="result-item"><strong>${d.label}</strong> — ${Math.round((d.conf||0)*100)}%</li>`
-          ).join('');
-        }
-
-        // Speak (client or server, whichever you wired)
-        try {
-          if (typeof announceResults === 'function') {
-            const normalized = dets.map(o => ({ label: o.label, conf: Number(o.conf)||0 }));
-            announceResults(normalized);
-          }
-        } catch (e) { console.warn('announceResults failed:', e); }
-
-      } catch (e) {
-        console.warn('Detect failed:', e);
-        alert((window.t ? t('failedToAnalyze') : 'Failed to analyze image.') + '\n' + e);
-      } finally {
-        showLoading(false);
-      }
     };
 
     // Upload flow
