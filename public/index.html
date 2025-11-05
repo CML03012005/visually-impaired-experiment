@@ -292,6 +292,151 @@
     <img id="modalImg" src="" style="object-fit: contain;object-position: center;width:100%; max-height:90%;">
   </div>
 
+  <!-- put this AFTER all other scripts OR at the bottom of script.js -->
+<script>
+(() => {
+  const API_BASE   = '';                   // e.g. 'https://your-ml.onrender.com' or '' if same origin
+  const DETECT_URL = API_BASE + '/detect';
+
+  const $ = sel => document.querySelector(sel);
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const uploadBtn   = $('#uploadBtn');
+    const startBtn    = $('#startCameraBtn');
+    const captureBtn  = $('#captureBtn');
+    const fileInput   = $('#imageInput');
+    const video       = $('#videoPreview');
+    const imgPrev     = $('#imagePreview');
+    const resultImg   = $('#result');
+    const loading     = $('#loadingOverlay');
+    const detCount    = $('#detectionCount');
+    const resultList  = $('#resultList');
+    const previewBox  = $('#previewBox');
+    const resultBox   = $('#resultBox');
+
+    // Guard: if elements are missing, bail early
+    if (!uploadBtn || !startBtn || !fileInput) return;
+
+    // Helper: show/hide loading
+    const showLoading = s => { if (loading) loading.style.display = s ? 'flex' : 'none'; };
+
+    // Helper: show image in the left preview box
+    const showPreviewBlob = async (blob) => {
+      if (!imgPrev) return;
+      // stop camera if on
+      if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+        video.style.display = 'none';
+      }
+      imgPrev.src = URL.createObjectURL(blob);
+      imgPrev.style.display = 'block';
+      $('#previewPlaceholder')?.style && ($('#previewPlaceholder').style.display = 'none');
+      previewBox?.classList.add('active');
+      return blob;
+    };
+
+    // Helper: call /detect
+    const detectBlob = async (blob) => {
+      showLoading(true);
+      try {
+        const fd = new FormData();
+        fd.append('image', blob, 'image.jpg');
+
+        const res = await fetch(DETECT_URL, { method: 'POST', body: fd });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        // Show annotated image
+        if (data.image && resultImg) {
+          resultImg.src = 'data:image/jpeg;base64,' + data.image;
+          resultImg.style.display = 'block';
+          $('#resultPlaceholder')?.style && ($('#resultPlaceholder').style.display = 'none');
+          resultBox?.classList.add('result-active');
+        }
+
+        // Fill list + count
+        const dets = Array.isArray(data.detections) ? data.detections : [];
+        if (detCount) {
+          detCount.textContent = (dets.length || 0) + ' ' + (window.t ? t('objects') : 'objects');
+          detCount.style.display = 'inline-block';
+        }
+        if (resultList) {
+          resultList.innerHTML = dets.map(d =>
+            `<li class="result-item"><strong>${d.label}</strong> — ${Math.round((d.conf||0)*100)}%</li>`
+          ).join('');
+        }
+
+        // Speak (client or server, whichever you wired)
+        try {
+          if (typeof announceResults === 'function') {
+            const normalized = dets.map(o => ({ label: o.label, conf: Number(o.conf)||0 }));
+            announceResults(normalized);
+          }
+        } catch (e) { console.warn('announceResults failed:', e); }
+
+      } catch (e) {
+        console.warn('Detect failed:', e);
+        alert((window.t ? t('failedToAnalyze') : 'Failed to analyze image.') + '\n' + e);
+      } finally {
+        showLoading(false);
+      }
+    };
+
+    // Upload flow
+    uploadBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const blob = await showPreviewBlob(f);
+      detectBlob(blob);
+    });
+
+    // Camera flow
+    startBtn.addEventListener('click', async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        alert(window.t ? t('cannotAccessCamera') : 'Cannot access camera.');
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } }, audio: false
+        });
+        if (video) {
+          video.srcObject = stream;
+          video.style.display = 'block';
+        }
+        if (imgPrev) imgPrev.style.display = 'none';
+        $('#previewPlaceholder')?.style && ($('#previewPlaceholder').style.display = 'none');
+        captureBtn?.style && (captureBtn.style.display = 'inline-flex');
+      } catch (e) {
+        console.warn(e);
+        alert(window.t ? t('cannotAccessCamera') : 'Cannot access camera.');
+      }
+    });
+
+    // Capture → detect
+    captureBtn?.addEventListener('click', async () => {
+      if (!video || !video.srcObject) return;
+      const c = document.createElement('canvas');
+      c.width  = video.videoWidth  || 640;
+      c.height = video.videoHeight || 480;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(video, 0, 0, c.width, c.height);
+      c.toBlob(async (blob) => {
+        if (!blob) return;
+        await showPreviewBlob(blob);
+        detectBlob(blob);
+      }, 'image/jpeg', 0.92);
+    });
+
+    // Defensive: if any invisible overlay might block clicks, disable it
+    const backdrop = document.querySelector('.menu-backdrop');
+    if (backdrop) backdrop.style.pointerEvents = 'none';
+  });
+})();
+</script>
+
+
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       // Mobile menu toggle
@@ -444,7 +589,6 @@
   </script>
 
   <!-- Main detection script - handles all camera and detection logic -->
-
   <script src="./translations.js" defer></script>
   <script src="./home.js" defer></script>
   <script src="./loc.js" defer></script>
