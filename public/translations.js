@@ -291,33 +291,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ====== Voice Announcement for Detection Results ======
-function announceResults(detections) {
+async function announceResults(detections) {
   if (!detections || !detections.length) return;
+  if (!('speechSynthesis' in window)) {
+    console.warn('TTS not supported in this WebView.');
+    return;
+  }
 
-  // 1️⃣ Get current language selection
+  await primeTTS();
+
   const sel = document.getElementById('languageSelector');
   const lang = sel?.value || 'en';
 
-  // 2️⃣ Map to SpeechSynthesis language codes
-  const langMap = { en: 'en-US', tl: 'fil-PH', ceb: 'ceb-PH' };
-  const speechLang = langMap[lang] || 'en-US';
+  const targets = {
+    en: ['en-PH','en-US','en-GB','en-AU'],
+    tl: ['fil-PH','tl-PH','en-PH','en-US','en-GB'],
+    ceb: ['ceb-PH','fil-PH','en-PH','en-US','en-GB']
+  };
+  const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
+  const pick = voices.find(v => targets[lang]?.includes(v.lang))
+            || voices.find(v => v.lang?.startsWith('en'))
+            || voices[0] || null;
 
-  // 3️⃣ Prepare spoken text
   let text;
-  if (lang === 'en') {
-    text = `Detected ${detections.length} object${detections.length > 1 ? 's' : ''}.`;
-  } else if (lang === 'tl') {
-    text = `Nakakita ng ${detections.length} bagay${detections.length > 1 ? 's' : ''}.`;
-  } else if (lang === 'ceb') {
-    text = `Nakadetect og ${detections.length} butang${detections.length > 1 ? 's' : ''}.`;
-  } else {
-    text = `Detected ${detections.length} object${detections.length > 1 ? 's' : ''}.`;
-  }
+  if (lang === 'tl')      text = `Nakakita ng ${detections.length} bagay${detections.length > 1 ? 's' : ''}.`;
+  else if (lang === 'ceb') text = `Nakadetect og ${detections.length} butang${detections.length > 1 ? 's' : ''}.`;
+  else                     text = `Detected ${detections.length} object${detections.length > 1 ? 's' : ''}.`;
 
-  // 4️⃣ Speak using Web Speech API
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = speechLang;
-  window.speechSynthesis.speak(utter);
+  try {
+    speechSynthesis.cancel(); // stop queued utterances
+    const u = new SpeechSynthesisUtterance(text);
+    if (pick) u.voice = pick; else u.lang = 'en-US';
+    speechSynthesis.speak(u);
+  } catch (e) {
+    console.warn('TTS speak failed:', e);
+  }
 }
+
+
+// ---- TTS bootstrap / helpers ----
+let ttsPrimed = false;
+
+function waitForVoices(timeoutMs = 2000) {
+  return new Promise(res => {
+    const synth = window.speechSynthesis;
+    if (!synth) return res(false);
+    const start = Date.now();
+    const check = () => {
+      const ok = synth.getVoices && synth.getVoices().length > 0;
+      if (ok || Date.now() - start > timeoutMs) return res(ok);
+      setTimeout(check, 100);
+    };
+    // Touch voices to trigger population
+    synth.getVoices();
+    if (typeof speechSynthesis.onvoiceschanged !== 'undefined') {
+      speechSynthesis.onvoiceschanged = () => res(true);
+    }
+    check();
+  });
+}
+
+async function primeTTS() {
+  if (ttsPrimed || !('speechSynthesis' in window)) return;
+  await waitForVoices();
+  // “Unlock” audio on some webviews
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  try { window.speechSynthesis.speak(u); } catch (_) {}
+  ttsPrimed = true;
+}
+
+// Prime on first user gestures in your UI
+['startCameraBtn','uploadBtn','captureBtn'].forEach(id => {
+  document.getElementById(id)?.addEventListener('click', primeTTS, { once:true });
+});
+
+// Call primeTTS on first real user gesture
+['startCameraBtn','uploadBtn','captureBtn'].forEach(id => {
+  document.getElementById(id)?.addEventListener('click', primeTTS, { once:true });
+});
+
 
 
