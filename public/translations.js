@@ -216,130 +216,67 @@ const translations = {
   }
 };
 
-const i18n = {
-  en: {
-    voiceAnalysisComplete: 'Analysis complete',
-    voiceDetected: 'Detected',
-    voiceWith: 'with',
-    voiceConfidence: 'confidence',
-    voiceNoObjects: 'No objects detected in this image',
-    objects: 'objects'
-  },
-  tl: {
-    voiceAnalysisComplete: 'Tapos na ang pag-aanalisa',
-    voiceDetected: 'Natukoy',
-    voiceWith: 'na may',
-    voiceConfidence: 'kumpiyansa',
-    voiceNoObjects: 'Walang natukoy na bagay sa larawang ito',
-    objects: 'mga bagay'
-  },
-  ceb: {
-    voiceAnalysisComplete: 'Human na ang pag-analisar',
-    voiceDetected: 'Nakit-an',
-    voiceWith: 'nga adunay',
-    voiceConfidence: 'kasaligan',
-    voiceNoObjects: 'Walay nakit-ang butang sa kini nga hulagway',
-    objects: 'mga butang'
-  }
-};
-
 (function () {
-  const DEFAULT = localStorage.getItem('lang') || 'en';
-  let currentLang = DEFAULT;
+  const STORAGE_KEY = 'lang';
 
-  window.getCurrentLanguage = () => currentLang;
-  window.t = (key, fallback='') => (i18n[currentLang] && i18n[currentLang][key]) ?? fallback;
+  function getLang() {
+    try { return localStorage.getItem(STORAGE_KEY) || 'en'; } catch { return 'en'; }
+  }
+  function setLang(lang) {
+    try { localStorage.setItem(STORAGE_KEY, lang); } catch {}
+  }
+  function t(key, fallback = '') {
+    const lang = getLang();
+    return (translations[lang] && translations[lang][key]) || fallback;
+  }
 
-  window.setLanguage = (lang) => {
-    currentLang = lang || 'en';
-    localStorage.setItem('lang', currentLang);
-    // (optional) re-apply UI translations:
+  function applyTranslations() {
+    const lang = getLang();
+    document.documentElement.lang = lang;
+
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const k = el.getAttribute('data-i18n');
-      if (k) el.textContent = window.t(k, el.textContent);
+      const val = translations[lang]?.[k];
+      if (!val) return;
+      if (el.hasAttribute('placeholder')) el.placeholder = val;
+      else el.textContent = val;
     });
-  };
+
+    const sel = document.getElementById('languageSelector');
+    if (sel && sel.value !== lang) sel.value = lang;
+  }
+
+  function refreshMapIfAny() {
+    const iframe = document.getElementById('gmIframe');
+    if (!iframe) return;
+    const coordsText = document.getElementById('gmCoords')?.textContent || '';
+    const [lat, lon] = coordsText.split(',').map(s => s?.trim());
+    const hl = (getLang() === 'tl') ? 'fil' : 'en';
+    if (lat && lon) {
+      iframe.src = `https://www.google.com/maps?q=${lat},${lon}&z=16&hl=${hl}&output=embed`;
+    } else if (typeof window.autoAskAndEmbed === 'function') {
+      window.autoAskAndEmbed();
+    }
+  }
+
+  // expose for other scripts (TTS builder, etc.)
+  window.getCurrentLanguage = getLang;
+  window.setLanguage = (lang) => { setLang(lang); applyTranslations(); refreshMapIfAny(); };
+  window.t = t;
+  window.applyTranslations = applyTranslations;
 
   document.addEventListener('DOMContentLoaded', () => {
+    // initial apply
+    applyTranslations();
+    refreshMapIfAny();
+
+    // selector binding
     const sel = document.getElementById('languageSelector');
     if (sel) {
-      sel.value = currentLang;
-      sel.addEventListener('change', e => setLanguage(e.target.value));
+      sel.value = getLang();
+      sel.addEventListener('change', e => {
+        setLanguage(e.target.value);
+      });
     }
   });
 })();
-
-// Get current language from localStorage or default to English
-function getCurrentLanguage() {
-  return localStorage.getItem('language') || 'en';
-}
-
-// Set language
-function setLanguage(lang) {
-  localStorage.setItem('language', lang);
-}
-
-// Get translation
-function t(key) {
-  const lang = getCurrentLanguage();
-  return translations[lang][key] || translations['en'][key] || key;
-}
-
-// Apply translations to page
-function applyTranslations() {
-  const lang = getCurrentLanguage();
-  document.documentElement.lang = lang;
-  
-  // Update all elements with data-i18n attribute
-  document.querySelectorAll('[data-i18n]').forEach(element => {
-    const key = element.getAttribute('data-i18n');
-    const translation = translations[lang][key];
-    
-    if (translation) {
-      // Check if it's a placeholder
-      if (element.hasAttribute('placeholder')) {
-        element.placeholder = translation;
-      } else {
-        element.textContent = translation;
-      }
-    }
-  });
-  
-  // Update language selector
-  const languageSelectoror = document.getElementById('languageSelector');
-  if (languageSelectoror) {
-    languageSelectoror.value = lang;
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  applyTranslations();
-
-  const languageSelector = document.getElementById('languageSelector');
-  if (languageSelector) {
-    languageSelector.addEventListener('change', () => {
-      // Save selected language
-      setLanguage(languageSelector.value);
-      applyTranslations();
-
-      // 🔁 Refresh map language dynamically (if we're on location.html)
-      const iframe = document.getElementById('gmIframe');
-      if (iframe) {
-        const coordsText = document.getElementById('gmCoords')?.textContent || '';
-        const [lat, lon] = coordsText.split(',').map(s => s?.trim());
-        if (lat && lon) {
-          const hl = (languageSelector.value === 'tl') ? 'fil' : 'en';
-          iframe.src = `https://www.google.com/maps?q=${lat},${lon}&z=16&hl=${hl}&output=embed`;
-        } else if (typeof autoAskAndEmbed === 'function') {
-          // 🧭 Re-run your location logic if no coords yet
-          autoAskAndEmbed();
-        }
-      }
-    });
-  }
-
-  // 🧩 Optional: On the location page, ensure map updates after translation
-  if (document.getElementById('gmIframe') && typeof autoAskAndEmbed === 'function') {
-    autoAskAndEmbed();
-  }
-});

@@ -138,24 +138,77 @@ function renderResults(data) {
     console.log('✅ Results list updated');
   }
   
-// ===== ANNOUNCE RESULTS WITH VOICE (single call) =====
-try {
-  const raw = data?.detections ?? data?.objects ?? data?.results ?? dets ?? [];
-  const detections = (Array.isArray(raw) ? raw : []).map(o => {
-    let conf = o.conf ?? o.confidence ?? o.score ?? 0;
-    if (conf > 1) conf /= 100; // normalize 0..1
-    return {
-      label: o.label ?? o.name ?? o.class ?? 'object',
-      conf: Number(conf) || 0
-    };
-  });
+// ---------- SERVER TTS announce (single block) ----------
+const TTS_BASE = 'https://object-detection-ml-y5v2.onrender.com'; // '' if same host
 
-  announceResults?.(detections);
-} catch (e) {
-  console.warn('announceResults failed:', e);
+// Warm audio once after any user gesture (unlocks autoplay on WebView)
+(function warmAudioOnce() {
+  const warm = () => {
+    const a = document.getElementById('ttsAudio');
+    if (!a) return;
+    a.muted = true;
+    a.src = 'data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA'; // tiny silence
+    a.play().then(() => { a.pause(); a.muted = false; a.removeAttribute('src'); a.load(); })
+             .catch(()=>{ /* ok if blocked */ });
+  };
+  ['startCameraBtn','uploadBtn','captureBtn'].forEach(id =>
+    document.getElementById(id)?.addEventListener('click', warm, { once:true })
+  );
+})();
+
+async function speakServer(text) {
+  const sel  = document.getElementById('languageSelector');
+  // gTTS supports 'en', 'tl'; fallback for 'ceb'
+  const lang = (sel?.value === 'tl') ? 'tl' : 'en';
+  const url  = `${TTS_BASE}/api/tts?text=${encodeURIComponent(text)}&lang=${lang}&_=${Date.now()}`;
+
+  const res  = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`TTS HTTP ${res.status}`);
+
+  const blob  = await res.blob();
+  const audio = document.getElementById('ttsAudio');
+  if (audio.src && audio.src.startsWith('blob:')) {
+    try { URL.revokeObjectURL(audio.src); } catch {}
+  }
+  audio.src = URL.createObjectURL(blob);
+
+  try { await audio.play(); }
+  catch { console.warn('Autoplay blocked until next user gesture'); }
 }
 
-}
+// Call this right after you receive the detection response (`data`)
+(function announceFromServerTTS(data, dets) {
+  try {
+    const raw = data?.detections ?? data?.objects ?? data?.results ?? dets ?? [];
+    const detections = (Array.isArray(raw) ? raw : []).map(o => {
+      let conf = o.conf ?? o.confidence ?? o.score ?? 0;
+      if (conf > 1) conf /= 100; // normalize to 0..1
+      return { label: o.label ?? o.name ?? o.class ?? 'object', conf: Number(conf) || 0 };
+    });
+
+    const t = window.t || ((k,d)=>d);
+    const complete = t('voiceAnalysisComplete','Analysis complete');
+    const detected = t('voiceDetected','Detected');
+    const withWord = t('voiceWith','with');
+    const confWord = t('voiceConfidence','confidence');
+    const noneText = t('voiceNoObjects','No objects detected in this image');
+
+    let line;
+    const sorted = [...detections].sort((a,b) => (b.conf||0) - (a.conf||0));
+    if (!sorted.length) {
+      line = `${complete}. ${noneText}.`;
+    } else {
+      const top = sorted[0];
+      const pct = Math.round((top.conf || 0) * 100);
+      line = `${complete}. ${detected} ${top.label} ${withWord} ${pct}% ${confWord}.`;
+    }
+    speakServer(line);
+  } catch (e) {
+    console.warn('Server TTS announce failed:', e);
+  }
+})(data, dets); // pass in what you already have
+
+
 
 async function dataURLtoBlob(dataURL) {
   const r = await fetch(dataURL);
@@ -420,3 +473,4 @@ if (analyzeBtn) {
 }
 
 console.log('✅ script.js initialization complete');
+}
