@@ -71,10 +71,6 @@ async function resizeImage(blob, maxWidth = 640) {
   });
 }
 
-async function dataURLtoBlob(dataURL) {
-  const r = await fetch(dataURL);
-  return await r.blob();
-}
 async function postToDetectFromBlob(blob) {
   console.log('📤 Posting to /api/detect, blob size:', blob.size);
   
@@ -306,7 +302,7 @@ if (captureBtn && videoEl) {
     console.log('🖱️ Capture button clicked!');
     if (!videoEl.videoWidth) {
       console.warn('⚠️ Video not ready, width:', videoEl.videoWidth);
-      return alert('Camera not ready yet.');
+      return alert(t('cameraNotReady'));
     }
     console.log('📸 Capturing frame, size:', videoEl.videoWidth, 'x', videoEl.videoHeight);
     hiddenCanvas.width = videoEl.videoWidth;
@@ -330,7 +326,7 @@ if (captureBtn && videoEl) {
     catch (e) { 
       console.error('❌ Analysis failed:', e);
       if (loadingOverlay) loadingOverlay.style.display = 'none';
-      alert('Failed to analyze image.\n' + (e.message || e)); 
+      alert(t('failedToAnalyze') + '\n' + (e.message || e));
     }
   });
 }
