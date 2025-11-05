@@ -78,27 +78,14 @@ async function postToDetectFromBlob(blob) {
   if (loadingOverlay) loadingOverlay.style.display = 'flex';
   if (resultPlaceholder) resultPlaceholder.style.display = 'none';
   if (resultBox) resultBox.classList.add('result-active');
+}
   
   const fd = new FormData();
   fd.append('image', blob, 'frame.jpg');
-  const res = await fetch('/api/detect', { method: 'POST', body: fd });
-
-  const text = await res.text();
-  console.log('📥 Response status:', res.status);
   
-  // Hide loading overlay
-  if (loadingOverlay) loadingOverlay.style.display = 'none';
-  
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${text}`);
-
-  let data;
-  try { data = JSON.parse(text); } catch { throw new Error(text); }
-
-  if (data.error) throw new Error(data.error);
-  console.log('✅ Detection results:', data.detections?.length || 0, 'objects found');
-  renderResults(data);
-  return data;
-}
+  // FIX: Use the ML backend URL
+  const ML_BACKEND = 'https://object-detection-ml-y5v2.onrender.com';
+  const res = await fetch(`${ML_BACKEND}/api/detect`, { method: 'POST', body: fd });
 
 function renderResults(data) {
   console.log('🎨 Rendering results...');
