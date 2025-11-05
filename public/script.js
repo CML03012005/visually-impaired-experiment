@@ -81,10 +81,7 @@ async function postToDetectFromBlob(blob) {
   
   const fd = new FormData();
   fd.append('image', blob, 'frame.jpg');
-  
-  // FIX: Use the ML backend URL
-  const ML_BACKEND = 'https://object-detection-ml-y5v2.onrender.com';
-  const res = await fetch(`${ML_BACKEND}/api/detect`, { method: 'POST', body: fd });
+  const res = await fetch('/api/detect', { method: 'POST', body: fd });
 
   const text = await res.text();
   console.log('📥 Response status:', res.status);
@@ -107,65 +104,6 @@ function renderResults(data) {
   console.log('🎨 Rendering results...');
   
   const dets = data.detections || [];
-  
-  // Update detection count badge with translation
-  if (detectionCount) {
-    const objectsText = dets.length === 1 ? t('object') : t('objects');
-    detectionCount.textContent = `${dets.length} ${objectsText}`;
-    detectionCount.style.display = 'inline-block';
-  }
-  
-  // Show annotated result image
-  if (resultImg && data.image) {
-    resultImg.src = `data:image/jpeg;base64,${data.image}`;
-    resultImg.style.display = 'block';
-    if (resultPlaceholder) resultPlaceholder.style.display = 'none';
-    console.log('✅ Annotated image displayed');
-  }
-  
-  // Update results list
-  if (resultList) {
-    const confidenceText = t('confidence');
-    resultList.innerHTML = dets.length
-      ? dets.map(d => `<li style="padding: 12px 15px; margin: 8px 0; background: linear-gradient(90deg, #f0f8ff 0%, #ffffff 100%); border-left: 4px solid #28A745; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="color: #333; font-weight: 500;">
-            <i class="fas fa-tag" style="color: #28A745; margin-right: 8px;"></i>
-            ${d.label}
-          </span>
-          <span style="background: #28A745; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
-            ${(d.conf * 100).toFixed(1)}%
-          </span>
-        </li>`).join('')
-      : `<li style="padding: 20px; text-align: center; color: #999; font-style: italic;">${t('noObjectsDetected')}</li>`;
-    resultList.parentElement.style.display = 'block';
-    console.log('✅ Results list updated');
-  }
-  
-  // TTS announcement - NOW INSIDE renderResults function
-  (function announceFromServerTTS() {
-    try {
-      const t = window.t || ((k,d)=>d);
-      const complete = t('voiceAnalysisComplete','Analysis complete');
-      const detected = t('voiceDetected','Detected');
-      const withWord = t('voiceWith','with');
-      const confWord = t('voiceConfidence','confidence');
-      const noneText = t('voiceNoObjects','No objects detected in this image');
-
-      let line;
-      const sorted = [...dets].sort((a,b) => (b.conf||0) - (a.conf||0));
-      if (!sorted.length) {
-        line = `${complete}. ${noneText}.`;
-      } else {
-        const top = sorted[0];
-        const pct = Math.round((top.conf || 0) * 100);
-        line = `${complete}. ${detected} ${top.label} ${withWord} ${pct}% ${confWord}.`;
-      }
-      speakServer(line);
-    } catch (e) {
-      console.warn('Server TTS announce failed:', e);
-    }
-  })(); // No parameters needed - dets is in scope
-}
   
   // Update detection count badge with translation
   if (detectionCount) {
@@ -533,5 +471,7 @@ if (analyzeBtn) {
     }
   });
 }
+}
 
 console.log('✅ script.js initialization complete');
+
