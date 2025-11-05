@@ -28,7 +28,8 @@ app.add_middleware(
 # Model init
 # ----------------------------
 # Model path can be overridden via env (MODEL_PATH), else ./best.pt beside this file
-DEFAULT_MODEL_PATH = os.path.join(os.path.dirname(__file__), "best.pt")
+# Set the path to best.pt in the ml_server folder
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "ml_server", "best.pt")
 MODEL_PATH = os.environ.get("MODEL_PATH", DEFAULT_MODEL_PATH)
 
 # Some hosts require this to allow non-strict weight loading
