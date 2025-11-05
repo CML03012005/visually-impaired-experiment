@@ -1,6 +1,7 @@
 # main.py
 from fastapi import FastAPI, File, UploadFile, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Response
 from fastapi.responses import StreamingResponse, JSONResponse
 from ultralytics import YOLO
 from gtts import gTTS
@@ -67,6 +68,11 @@ def health():
             content={"status": "error", "detail": f"Model not loaded: {model_load_error}"},
         )
     return {"status": "ok"}
+
+@app.options("/detect")
+def options_detect():
+    # Return 204; CORSMiddleware will inject the CORS headers.
+    return Response(status_code=204)
 
 # ----------------------------
 # Detection route

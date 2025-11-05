@@ -71,36 +71,50 @@ async function resizeImage(blob, maxWidth = 640) {
   });
 }
 
-async function postToDetectFromBlob(blob) {
-  console.log('📤 Posting to ML /detect, blob size:', blob.size);
+const ML_BACKEND = 'https://object-detection-ml-y5v2.onrender.com';
 
+async function postToDetectFromBlob(blob) {
+  console.log('📤 Posting to /detect, blob size:', blob.size);
+
+  // Show loading overlay
   if (loadingOverlay) loadingOverlay.style.display = 'flex';
   if (resultPlaceholder) resultPlaceholder.style.display = 'none';
   if (resultBox) resultBox.classList.add('result-active');
 
-  const ML_BACKEND = 'https://object-detection-ml-y5v2.onrender.com';
+  // 1) Warmup ping – wakes service so preflight/POST won’t 502
+  try {
+    await fetch(`${ML_BACKEND}/health`, { method: 'GET', cache: 'no-store' });
+  } catch (e) {
+    console.warn('Health warmup failed (continuing):', e);
+  }
+
+  // 2) Now do the detect
   const fd = new FormData();
   fd.append('image', blob, 'frame.jpg');
 
-  const res = await fetch(`${ML_BACKEND}/detect`, { method: 'POST', body: fd });
+  const res = await fetch(`${ML_BACKEND}/detect`, {
+    method: 'POST',
+    body: fd,
+    // mode: 'cors' // default, ok to omit
+  });
+
+  const text = await res.text();
   console.log('📥 Response status:', res.status);
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    if (loadingOverlay) loadingOverlay.style.display = 'none';
-    throw new Error(`HTTP ${res.status} ${text}`);
-  }
-
-  const data = await res.json();
   if (loadingOverlay) loadingOverlay.style.display = 'none';
 
-  if (data.error) throw new Error(data.error);
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${text}`);
 
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error(text); }
+
+  if (data.error) throw new Error(data.error);
   console.log('✅ Detection results:', data.detections?.length || 0, 'objects found');
   renderResults(data);
   return data;
 }
 
+// ===== RENDER RESULTS =====
 function renderResults(data) {
   console.log('🎨 Rendering results...');
 
