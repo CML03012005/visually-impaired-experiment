@@ -1220,20 +1220,32 @@ header nav ul#navMenu {
     }
 }
 
-/* mobile */
-/* ===== MOBILE OPTIMIZATIONS ===== */
 
 /* Mobile menu improvements */
+/* Ensure the list is visible when the panel (nav.show) is open */
 @media (max-width: 768px) {
+  nav ul { display: flex; }                 /* stop hiding it by default */
+  nav.show #navMenu { display: flex !important; }
+}
+
 
     /* Header adjustments */
     header {
         padding: 15px 0;
+        position: relative;
+    }
+
+    header .container {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0;
     }
 
     header h1 {
         font-size: 1.2rem !important;
         line-height: 1.3;
+        margin: 0;
     }
 
     /* Menu toggle button */
@@ -1245,9 +1257,9 @@ header nav ul#navMenu {
         font-size: 24px;
         cursor: pointer;
         padding: 10px;
-        position: absolute;
-        right: 20px;
-        top: 20px;
+        position: relative;
+        right: 0;
+        top: 0;
         z-index: 1001;
     }
 
@@ -1255,22 +1267,23 @@ header nav ul#navMenu {
     nav {
         position: fixed;
         top: 0;
-        right: -100%;
+        right: 0;
         width: 80%;
-        max-width: 300px;
+        max-width: 350px;
         height: 100vh;
         background: linear-gradient(180deg, #6c63ff 0%, #5a52d5 100%);
-        padding: 80px 20px 20px;
-        transition: right 0.3s ease;
-        z-index: 1000;
+        padding: 60px 20px 20px;
+        transform: translateX(100%); /* Move completely off-screen */
+        transition: transform 0.3s ease;
+        z-index: 10001; /* Above backdrop */
         box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
         overflow-y: auto;
     }
 
     nav.show {
-        right: 0;
+        transform: translateX(0); /* Slide in */
     }
-
+    
     #navMenu {
         flex-direction: column;
         gap: 0;
@@ -1317,9 +1330,16 @@ header nav ul#navMenu {
     }
 
     /* Hero section mobile */
+    .hero-section {
+        padding: 2rem 1.5rem;
+        text-align: left;
+    }
+
     .hero-section h2 {
         font-size: 1.5rem;
         line-height: 1.4;
+        text-align: left;
+        margin-bottom: 1rem;
     }
 
     .hero-section p {
@@ -1545,5 +1565,3 @@ html {
         /* Prevents zoom on iOS */
     }
 }
-
-

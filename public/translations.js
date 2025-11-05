@@ -10,6 +10,7 @@ const translations = {
     heroTitle: "Enhancing Object Recognition and Navigation for Visually Impaired Person using Deep Learning Algorithm",
     heroDescription: "Integrating deep-learning object detection to deliver real-time guidance and obstacle alerts for visually impaired users.",
     enableLoc: "Enable Location",
+    navLoc: "Location",
     // Feature Cards
     captureTitle: "Capture Image",
     captureDesc: "Use your device camera to capture an object.",
@@ -80,6 +81,7 @@ const translations = {
     siteName: "Pagkilala ng Bagay at Nabigasyon",
     home: "Tahanan",
     objectInfo: "Impormasyon ng Bagay",
+    navLoc: "Lokasyon",
     
     // Hero Section
     heroTitle: "Pagpapahusay ng Pagkilala ng Bagay at Nabigasyon para sa Taong may Kapansanan sa Paningin gamit ang Deep Learning Algorithm",
@@ -148,7 +150,8 @@ const translations = {
     // Header
     siteName: "Pag-ila sa Butang ug Nabigasyon",
     home: "Balay",
-    objectInfo: "Impormasyon sa Butang",
+    objectInfo: "Impormasyong Butang",
+    navLoc: "Lokasyon",
     
     // Hero Section
     heroTitle: "Pagpauswag sa Pag-ila sa Butang ug Nabigasyon alang sa Tawo nga Adunay Kakulangan sa Panan-aw gamit ang Deep Learning Algorithm",
