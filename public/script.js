@@ -138,12 +138,23 @@ function renderResults(data) {
     console.log('✅ Results list updated');
   }
   
-  // ===== ANNOUNCE RESULTS WITH VOICE =====
-  if (typeof announceResults === 'function') {
-    announceResults(dets);
-  } else {
-    console.warn('⚠️ announceResults function not found. Make sure translations.js is loaded.');
-  }
+// ===== ANNOUNCE RESULTS WITH VOICE (single call) =====
+try {
+  const raw = data?.detections ?? data?.objects ?? data?.results ?? dets ?? [];
+  const detections = (Array.isArray(raw) ? raw : []).map(o => {
+    let conf = o.conf ?? o.confidence ?? o.score ?? 0;
+    if (conf > 1) conf /= 100; // normalize 0..1
+    return {
+      label: o.label ?? o.name ?? o.class ?? 'object',
+      conf: Number(conf) || 0
+    };
+  });
+
+  announceResults?.(detections);
+} catch (e) {
+  console.warn('announceResults failed:', e);
+}
+
 }
 
 async function dataURLtoBlob(dataURL) {
