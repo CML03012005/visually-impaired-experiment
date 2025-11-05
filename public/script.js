@@ -140,6 +140,31 @@ function renderResults(data) {
     resultList.parentElement.style.display = 'block';
     console.log('✅ Results list updated');
   }
+  
+  // TTS announcement - NOW INSIDE renderResults function
+  (function announceFromServerTTS() {
+    try {
+      const t = window.t || ((k,d)=>d);
+      const complete = t('voiceAnalysisComplete','Analysis complete');
+      const detected = t('voiceDetected','Detected');
+      const withWord = t('voiceWith','with');
+      const confWord = t('voiceConfidence','confidence');
+      const noneText = t('voiceNoObjects','No objects detected in this image');
+
+      let line;
+      const sorted = [...dets].sort((a,b) => (b.conf||0) - (a.conf||0));
+      if (!sorted.length) {
+        line = `${complete}. ${noneText}.`;
+      } else {
+        const top = sorted[0];
+        const pct = Math.round((top.conf || 0) * 100);
+        line = `${complete}. ${detected} ${top.label} ${withWord} ${pct}% ${confWord}.`;
+      }
+      speakServer(line);
+    } catch (e) {
+      console.warn('Server TTS announce failed:', e);
+    }
+  })(); // No parameters needed - dets is in scope
 }
   
   // Update detection count badge with translation
