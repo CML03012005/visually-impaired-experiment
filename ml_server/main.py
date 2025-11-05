@@ -28,7 +28,7 @@ app.add_middleware(
 # Model init
 # ----------------------------
 # Define the default model path
-DEFAULT_MODEL_PATH = os.path.join(os.path.dirname(__file__), "ml_server", "best.pt")
+DEFAULT_MODEL_PATH = os.path.join(os.path.dirname(__file__), "best.pt")
 
 # Use the environment variable if set, otherwise use the default path
 MODEL_PATH = os.environ.get("MODEL_PATH", DEFAULT_MODEL_PATH)
