@@ -1222,12 +1222,7 @@ header nav ul#navMenu {
 
 
 /* Mobile menu improvements */
-/* Ensure the list is visible when the panel (nav.show) is open */
 @media (max-width: 768px) {
-  nav ul { display: flex; }                 /* stop hiding it by default */
-  nav.show #navMenu { display: flex !important; }
-}
-
 
     /* Header adjustments */
     header {
