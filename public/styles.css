@@ -35,6 +35,13 @@
     padding: 0;
 }
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;   /* no sideways scroll */
+  touch-action: pan-y;  /* vertical swipes only */
+}
+
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
@@ -1262,21 +1269,20 @@ header nav ul#navMenu {
     nav {
         position: fixed;
         top: 0;
-        right: 0;
+        right: -100%;
         width: 80%;
         max-width: 350px;
         height: 100vh;
         background: linear-gradient(180deg, #6c63ff 0%, #5a52d5 100%);
         padding: 60px 20px 20px;
-        transform: translateX(100%); /* Move completely off-screen */
-        transition: transform 0.3s ease;
-        z-index: 10001; /* Above backdrop */
+        transition: right 0.3s ease;
+        z-index: 1000;
         box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
         overflow-y: auto;
     }
 
     nav.show {
-        transform: translateX(0); /* Slide in */
+        right: 0;
     }
     
     #navMenu {
@@ -1559,4 +1565,26 @@ html {
         font-size: 16px !important;
         /* Prevents zoom on iOS */
     }
+}
+
+/* Drawer backdrop via pseudo-element */
+@media (max-width: 768px){
+nav {
+    position: fixed;
+    top: 0;
+    right: 0;                       /* anchor to right edge */
+    transform: translateX(100%);    /* move off-screen without widening page */
+    width: 80%;
+    max-width: 350px;
+    height: 100vh;
+    background: linear-gradient(180deg, #6c63ff 0%, #5a52d5 100%);
+    padding: 60px 20px 20px;
+    transition: transform 0.3s ease;/* animate transform, not 'right' */
+    z-index: 10001;
+    box-shadow: -2px 0 10px rgba(0,0,0,.2);
+    overflow-y: auto;
+    will-change: transform;
+    contain: layout paint;          /* prevents layout from affecting page size */
+  }
+  nav.show { transform: translateX(0); }
 }
