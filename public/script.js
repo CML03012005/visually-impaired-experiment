@@ -78,7 +78,6 @@ async function postToDetectFromBlob(blob) {
   if (loadingOverlay) loadingOverlay.style.display = 'flex';
   if (resultPlaceholder) resultPlaceholder.style.display = 'none';
   if (resultBox) resultBox.classList.add('result-active');
-}
   
   const fd = new FormData();
   fd.append('image', blob, 'frame.jpg');
@@ -87,10 +86,61 @@ async function postToDetectFromBlob(blob) {
   const ML_BACKEND = 'https://object-detection-ml-y5v2.onrender.com';
   const res = await fetch(`${ML_BACKEND}/api/detect`, { method: 'POST', body: fd });
 
+  const text = await res.text();
+  console.log('📥 Response status:', res.status);
+  
+  // Hide loading overlay
+  if (loadingOverlay) loadingOverlay.style.display = 'none';
+  
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${text}`);
+
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error(text); }
+
+  if (data.error) throw new Error(data.error);
+  console.log('✅ Detection results:', data.detections?.length || 0, 'objects found');
+  renderResults(data);
+  return data;
+}
+
 function renderResults(data) {
   console.log('🎨 Rendering results...');
   
   const dets = data.detections || [];
+  
+  // Update detection count badge with translation
+  if (detectionCount) {
+    const objectsText = dets.length === 1 ? t('object') : t('objects');
+    detectionCount.textContent = `${dets.length} ${objectsText}`;
+    detectionCount.style.display = 'inline-block';
+  }
+  
+  // Show annotated result image
+  if (resultImg && data.image) {
+    resultImg.src = `data:image/jpeg;base64,${data.image}`;
+    resultImg.style.display = 'block';
+    if (resultPlaceholder) resultPlaceholder.style.display = 'none';
+    console.log('✅ Annotated image displayed');
+  }
+  
+  // Update results list
+  if (resultList) {
+    const confidenceText = t('confidence');
+    resultList.innerHTML = dets.length
+      ? dets.map(d => `<li style="padding: 12px 15px; margin: 8px 0; background: linear-gradient(90deg, #f0f8ff 0%, #ffffff 100%); border-left: 4px solid #28A745; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: #333; font-weight: 500;">
+            <i class="fas fa-tag" style="color: #28A745; margin-right: 8px;"></i>
+            ${d.label}
+          </span>
+          <span style="background: #28A745; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+            ${(d.conf * 100).toFixed(1)}%
+          </span>
+        </li>`).join('')
+      : `<li style="padding: 20px; text-align: center; color: #999; font-style: italic;">${t('noObjectsDetected')}</li>`;
+    resultList.parentElement.style.display = 'block';
+    console.log('✅ Results list updated');
+  }
+}
   
   // Update detection count badge with translation
   if (detectionCount) {
@@ -460,4 +510,3 @@ if (analyzeBtn) {
 }
 
 console.log('✅ script.js initialization complete');
-}
