@@ -27,9 +27,10 @@ app.add_middleware(
 # ----------------------------
 # Model init
 # ----------------------------
-# Model path can be overridden via env (MODEL_PATH), else ./best.pt beside this file
-# Set the path to best.pt in the ml_server folder
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "ml_server", "best.pt")
+# Define the default model path
+DEFAULT_MODEL_PATH = os.path.join(os.path.dirname(__file__), "ml_server", "best.pt")
+
+# Use the environment variable if set, otherwise use the default path
 MODEL_PATH = os.environ.get("MODEL_PATH", DEFAULT_MODEL_PATH)
 
 # Some hosts require this to allow non-strict weight loading
@@ -44,6 +45,7 @@ try:
 except Exception as e:
     model_load_error = str(e)
     print("❌ Failed to load YOLO model:", model_load_error)
+
 
 # ----------------------------
 # Routes: health & root
