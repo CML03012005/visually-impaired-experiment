@@ -117,10 +117,6 @@ async function postToDetectFromBlob(blob) {
 // ===== RENDER RESULTS =====
 function renderResults(data) {
   console.log('🎨 Rendering results...');
-    // inside renderResults(data) just before speakServer(line)
-  console.log('🔊 TTS line:', line);
-  speakServer(line);
-
 
   const dets = data.detections || [];
 
@@ -180,7 +176,8 @@ function renderResults(data) {
       const top = sorted[0];
       const pct = Math.round((top.conf || 0) * 100);
       line = `${complete}. ${detected} ${top.label} ${withWord} ${pct}% ${confWord}.`;
-    }
+    }   
+    console.log('🔊 TTS line:', line);
     // will play via the server TTS endpoint
     speakServer(line);
   } catch (e) {
