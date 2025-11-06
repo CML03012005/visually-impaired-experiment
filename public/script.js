@@ -117,6 +117,10 @@ async function postToDetectFromBlob(blob) {
 // ===== RENDER RESULTS =====
 function renderResults(data) {
   console.log('🎨 Rendering results...');
+    // inside renderResults(data) just before speakServer(line)
+  console.log('🔊 TTS line:', line);
+  speakServer(line);
+
 
   const dets = data.detections || [];
 
@@ -187,42 +191,51 @@ function renderResults(data) {
 
   
 // ---------- SERVER TTS announce (single block) ----------
-const TTS_BASE = 'https://object-detection-ml-y5v2.onrender.com'; // '' if same host
+const TTS_BASE = ML_BACKEND; // '' if same host
 
 // Warm audio once after any user gesture (unlocks autoplay on WebView)
-(function warmAudioOnce() {
-  const warm = () => {
-    const a = document.getElementById('ttsAudio');
-    if (!a) return;
-    a.muted = true;
-    a.src = 'data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA'; // tiny silence
-    a.play().then(() => { a.pause(); a.muted = false; a.removeAttribute('src'); a.load(); })
-             .catch(()=>{ /* ok if blocked */ });
+(function warmBackendsOnce() {
+  const run = async () => {
+    // Wake health (ok lang kahit mag-502 minsan)
+    try { await fetch(`${ML_BACKEND}/health`, { cache: 'no-store' }); } catch {}
+    // Small TTS ping to spin up gTTS + network
+    try { await fetch(`${TTS_BASE}/api/tts?text=ok&lang=en&_=${Date.now()}`, { cache: 'no-store' }); } catch {}
   };
   ['startCameraBtn','uploadBtn','captureBtn'].forEach(id =>
-    document.getElementById(id)?.addEventListener('click', warm, { once:true })
+    document.getElementById(id)?.addEventListener('click', run, { once:true })
   );
 })();
 
+function speakLocal(text, lang) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = (lang === 'tl') ? 'fil-PH' : 'en-US'; // simple map
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  } catch (e) { console.warn('Local TTS failed:', e); }
+}
+
 async function speakServer(text) {
   const sel  = document.getElementById('languageSelector');
-  // gTTS supports 'en', 'tl'; fallback for 'ceb'
   const lang = (sel?.value === 'tl') ? 'tl' : 'en';
-  const url  = `${TTS_BASE}/api/tts?text=${encodeURIComponent(text)}&lang=${lang}&_=${Date.now()}`;
 
-  const res  = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`TTS HTTP ${res.status}`);
+  try {
+    const url  = `${TTS_BASE}/api/tts?text=${encodeURIComponent(text)}&lang=${lang}&_=${Date.now()}`;
+    const res  = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-  const blob  = await res.blob();
-  const audio = document.getElementById('ttsAudio');
-  if (audio.src && audio.src.startsWith('blob:')) {
-    try { URL.revokeObjectURL(audio.src); } catch {}
+    const blob  = await res.blob();
+    const audio = document.getElementById('ttsAudio');
+    if (audio.src && audio.src.startsWith('blob:')) { try { URL.revokeObjectURL(audio.src); } catch {} }
+    audio.src = URL.createObjectURL(blob);
+    await audio.play();  // if blocked, the catch below will trigger
+  } catch (e) {
+    console.warn('Server TTS failed (falling back to client):', e);
+    speakLocal(text, lang);
   }
-  audio.src = URL.createObjectURL(blob);
-
-  try { await audio.play(); }
-  catch { console.warn('Autoplay blocked until next user gesture'); }
 }
+
 
 async function dataURLtoBlob(dataURL) {
   const r = await fetch(dataURL);
